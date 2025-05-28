@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📊 Reportes de Despliegues</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-black text-white px-4 py-6">
+
+<!-- 🍔 Responsive Navigation -->
+<header x-data="{ open: false }" class="sticky top-0 z-50 bg-black mb-6">
+  <div class="flex justify-between items-center py-4 px-4 md:px-6 bg-gray-900 rounded-md">
+    <div class="text-lg font-bold text-orange-400 flex items-center gap-2">
+      <span>🛠</span> <span>DevOps Dashboard</span>
+    </div>
+    <div class="md:hidden">
+      <button @click="open = !open" class="text-white focus:outline-none">
+        <template x-if="!open">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </template>
+        <template x-if="open">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </template>
+      </button>
+    </div>
+    <nav class="hidden md:flex space-x-6 text-sm items-center">
+      <a href="/" class="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">🏠 <span>Dashboard</span></a>
+      <a href="/reports" class="text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1">📊 <span>Reportes</span></a>
+    </nav>
+  </div>
+  <div x-show="open" x-transition class="md:hidden bg-gray-800 mt-2 p-4 rounded-md space-y-2">
+    <a href="/" class="block text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-2">🏠 Dashboard</a>
+    <a href="/reports" class="block text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-2">📊 Reportes</a>
+  </div>
+</header>
+
+<div class="max-w-5xl mx-auto">
+
+  <h1 class="text-3xl font-bold text-orange-400 mb-6">📊 Reportes de Despliegues</h1>
+
+<!-- 🔍 Filtros -->
+<div class="bg-gray-900 p-6 rounded-lg shadow-lg mb-8">
+  <form method="GET" action="/reports">
+    <div class="grid md:grid-cols-7 gap-4 items-end">
+
+      <!-- Texto -->
+      <div class="col-span-1">
+        <label class="font-semibold block mb-1">Texto</label>
+        <input type="text" name="filtro" value="{{ filtro }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
+               placeholder="feature, repo, estado...">
+      </div>
+
+      <!-- Estado -->
+      <div class="col-span-1">
+        <label class="font-semibold block mb-1">Estado</label>
+        <select name="filter_estado"
+                class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+          <option value="">Todos</option>
+          {% for estado in estado_options %}
+          <option value="{{ estado }}" {% if filter_estado == estado %}selected{% endif %}>{{ estado }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Ambiente -->
+      <div class="col-span-1">
+        <label class="font-semibold block mb-1">Ambiente</label>
+        <select name="filter_ambiente"
+                class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+          <option value="">Todos</option>
+          {% for a in ambiente_options %}
+          <option value="{{ a }}" {% if filter_ambiente == a %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Fecha desde -->
+      <div class="col-span-1">
+        <label class="font-semibold block mb-1">Fecha desde</label>
+        <input type="date" name="start_date" value="{{ start_date }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+      </div>
+
+      <!-- Fecha hasta -->
+      <div class="col-span-1">
+        <label class="font-semibold block mb-1">Fecha hasta</label>
+        <input type="date" name="end_date" value="{{ end_date }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+      </div>
+
+      <!-- Button group (flex inside grid cell) -->
+      <div class="col-span-2 flex gap-2">
+        <button type="submit"
+                class="flex items-center gap-1 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-5 h-[42px] rounded">
+          <span>🔍</span>
+          <span>Buscar</span>
+        </button>
+        <a href="/reports"
+           class="flex items-center gap-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 h-[42px] rounded">
+          <span>🧹</span>
+          <span>Limpiar</span>
+        </a>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+
+
+  <!-- 📋 Tabla de resultados -->
+  {% if filtered_deployments %}
+  <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+    <h2 class="text-cyan-400 text-lg font-semibold mb-4">📄 Resultados</h2>
+    <div class="overflow-x-auto">
+      <table id="filteredTable" class="w-full text-sm table-auto">
+        <thead>
+          <tr class="bg-gray-800">
+            <th class="px-3 py-2 border border-gray-700">Feature</th>
+            <th class="px-3 py-2 border border-gray-700">Ambiente</th>
+            <th class="px-3 py-2 border border-gray-700">Estado</th>
+            <th class="px-3 py-2 border border-gray-700">Fecha</th>
+            <th class="px-3 py-2 border border-gray-700">Release Manager</th>
+            <th class="px-3 py-2 border border-gray-700">Repositorio</th>
+            <th class="px-3 py-2 border border-gray-700">Comentario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in filtered_deployments %}
+          <tr>
+            <td class="border border-gray-700 px-3 py-1">{{ row.name }}</td>
+            <td class="border border-gray-700 px-3 py-1">{{ row.ambiente }}</td>
+            <td class="border border-gray-700 px-3 py-1">{{ row.estado }}</td>
+            <td class="border border-gray-700 px-3 py-1">{{ row.fecha or '-' }}</td>
+            <td class="border border-gray-700 px-3 py-1">{{ row.release_manager or '-' }}</td>
+            <td class="border border-gray-700 px-3 py-1">{{ row.repositorio }}</td>
+            <td class="border border-gray-700 px-3 py-1">{{ row.master or '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <button onclick="exportFilteredCSV()"
+            class="mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-2 rounded">
+      📤 Exportar CSV
+    </button>
+  </div>
+  {% else %}
+  <p class="text-gray-400 italic mt-6">No se encontraron resultados.</p>
+  {% endif %}
+</div>
+
+<!-- 💾 CSV Export Script -->
+<script>
+function exportFilteredCSV() {
+  const table = document.getElementById("filteredTable");
+  if (!table) return;
+
+  const rows = Array.from(table.querySelectorAll("tr"));
+  const csv = rows.map(row => {
+    const cells = Array.from(row.querySelectorAll("th,td"));
+    return cells.map(cell => '"' + cell.innerText.trim() + '"').join(",");
+  }).join("\\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "filtered_deployments.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Despliegues</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #000;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 { color: #00bfff; }
+    h2 { color: #ffa500; margin-bottom: 15px; }
+
+    .form-container {
+      background-color: #1c1c1c;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      margin-bottom: 30px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    input, select, textarea {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background-color: #333;
+      color: #fff;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    button {
+      background-color: #00bfff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #007acc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #444;
+      text-align: left;
+    }
+
+    th {
+      background-color: #222;
+      color: #00bfff;
+    }
+
+    .env-cell {
+      position: relative;
+    }
+
+    .edit-env-btn {
+      margin-left: 5px;
+      background: none;
+      border: none;
+      color: #ffa500;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #editModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: #1c1c1c;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      color: white;
+    }
+
+    .page-container {
+      max-width: 1000px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+<div class="page-container">
+  <h1>📦 Registro de Despliegues del Equipo DevOps</h1>
+
+  <!-- 📋 Nuevo despliegue -->
+  <div class="form-container">
+    <h2>📋 Registrar un nuevo despliegue</h2>
+    <form method="POST" action="/">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Nombre del Feature</label>
+          <input type="text" id="name" name="name" list="feature_names_list" required>
+          <datalist id="feature_names_list">
+            {% for name in feature_names %}
+            <option value="{{ name }}">
+            {% endfor %}
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label for="type">Tipo</label>
+          <select id="type" name="type" required>
+            {% for t in type_options %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="ambiente">Ambiente</label>
+          <select id="ambiente" name="ambiente" required>
+            {% for a in ambiente_options %}
+            <option value="{{ a }}">{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fecha">Fecha</label>
+          <input type="date" id="fecha" name="fecha" value="{{ today }}" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="release_manager">Release Manager</label>
+          <select id="release_manager" name="release_manager" required>
+            {% for rm in rm_options %}
+            <option value="{{ rm }}">{{ rm }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado" required>
+            {% for e in estado_options %}
+            <option value="{{ e }}">{{ e }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="repositorio">Repositorio</label>
+          <select id="repositorio" name="repositorio" required>
+            {% for r in repos_options %}
+            <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="master">Script / Archivo</label>
+          <textarea id="master" name="master" rows="3" placeholder="Ej: deploy.sql"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="application">Aplicación</label>
+          <select id="application" name="application" required>
+            {% for app in app_options %}
+            <option value="{{ app }}">{{ app }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tenancy">Tenancy</label>
+          <select id="tenancy" name="tenancy" required>
+            {% for t in tenancy_options %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <button type="submit">💾 Guardar</button>
+    </form>
+  </div>
+
+  <!-- 🔍 Buscador -->
+  <div class="form-container">
+    <h2>🔍 Buscar despliegues</h2>
+    <form method="GET" action="/">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="filtro">Texto (feature, repo o estado)</label>
+          <input type="text" id="filtro" name="filtro" value="{{ filtro }}">
+        </div>
+        <div class="form-group">
+          <label for="filter_estado">Estado</label>
+          <select id="filter_estado" name="filter_estado">
+            <option value="">Todos</option>
+            {% for estado in estado_options %}
+            <option value="{{ estado }}" {% if filter_estado == estado %}selected{% endif %}>{{ estado }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="filter_ambiente">Ambiente</label>
+          <select id="filter_ambiente" name="filter_ambiente">
+            <option value="">Todos</option>
+            {% for a in ambiente_options %}
+            <option value="{{ a }}" {% if filter_ambiente == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="justify-content: flex-end; display: flex;">
+          <button type="submit" style="margin-top: auto;">Buscar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- 📄 Vista matriz -->
+  <h2>📄 Despliegues</h2>
+  <table>
+    <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Repo</th>
+      <th>Tipo</th>
+      <th>App</th>
+      <th>Script</th>
+      {% for env in ambiente_options %}
+      <th>{{ env }}</th>
+      {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for name, data in grouped_deployments.items() %}
+    <tr data-feature="{{ name }}">
+      <td>{{ name }}</td>
+      <td>{{ data.repositorio }}</td>
+      <td>{{ data.type }}</td>
+      <td>{{ data.application }}</td>
+      <td>{{ data.master.replace('\\n', '<br>') | safe }}</td>
+      {% for env in ambiente_options %}
+      <td class="env-cell" data-env="{{ env }}">
+        {% if data.env_status[env] %}
+          <span>{{ data.env_status[env] == 'Valid' and '✅' or '❌' }}</span>
+          <button class="edit-env-btn" title="Editar">✎</button>
+        {% else %}
+          <span>-</span>
+          <button class="edit-env-btn" title="Agregar">➕</button>
+        {% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if filtered_deployments %}
+  <div class="form-container">
+    <h2>📋 Resultados filtrados</h2>
+    <table id="filteredTable">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Ambiente</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Release Manager</th>
+          <th>Repositorio</th>
+          <th>Comentario</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in filtered_deployments %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td>{{ row.ambiente }}</td>
+          <td>{{ row.estado }}</td>
+          <td>{{ row.fecha or '-' }}</td>
+          <td>{{ row.release_manager or '-' }}</td>
+          <td>{{ row.repositorio }}</td>
+          <td>{{ row.master or '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button onclick="exportFilteredCSV()" style="margin-top:10px;">📤 Exportar CSV</button>
+  </div>
+  {% endif %}
+
+  <!-- Modal -->
+  <div id="editModal">
+    <div class="modal-content">
+      <h3 id="modal-title">✏️ Editar Despliegue</h3>
+      <form id="editDeploymentForm">
+        <input type="hidden" id="modal-feature">
+        <input type="hidden" id="modal-env">
+
+        <label>Estado</label>
+        <select id="modal-estado" required>
+          {% for status in estado_options %}
+          <option value="{{ status }}">{{ status }}</option>
+          {% endfor %}
+        </select>
+
+        <label>Fecha</label>
+        <input type="date" id="modal-fecha" required>
+
+        <label>Release Manager</label>
+        <select id="modal-rm" required>
+          {% for rm in rm_options %}
+          <option value="{{ rm }}">{{ rm }}</option>
+          {% endfor %}
+        </select>
+
+        <div style="margin-top:15px;">
+          <button type="submit">Guardar</button>
+          <button type="button" onclick="closeModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> <!-- CLOSE page-container -->
+
+<script>
+function closeModal() {
+  document.getElementById("editModal").style.display = "none";
+}
+
+function exportFilteredCSV() {
+  const table = document.getElementById("filteredTable");
+  if (!table) return;
+
+  const rows = Array.from(table.querySelectorAll("tr"));
+  const csv = rows.map(row => {
+    const cells = Array.from(row.querySelectorAll("th,td"));
+    return cells.map(cell => '"' + cell.innerText.trim() + '"').join(",");
+  }).join("\\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "filtered_deployments.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.edit-env-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const cell = button.closest('.env-cell');
+      const row = cell.closest('tr');
+      const feature = row.dataset.feature;
+      const ambiente = cell.dataset.env;
+
+      fetch('/get_deployment_details', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ feature, ambiente })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("modal-feature").value = feature;
+        document.getElementById("modal-env").value = ambiente;
+        document.getElementById("modal-estado").value = data.estado || "";
+        document.getElementById("modal-fecha").value = data.fecha || "";
+        document.getElementById("modal-rm").value = data.release_manager || "";
+
+        const isNew = !(data.estado || data.fecha || data.release_manager);
+        document.getElementById("modal-title").innerText = isNew
+          ? "➕ Nuevo Despliegue"
+          : "✏️ Editar Despliegue";
+
+        document.getElementById("editModal").style.display = "flex";
+      });
+    });
+  });
+
+  document.getElementById("editDeploymentForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const feature = document.getElementById("modal-feature").value;
+    const ambiente = document.getElementById("modal-env").value;
+    const estado = document.getElementById("modal-estado").value;
+    const fecha = document.getElementById("modal-fecha").value;
+    const release_manager = document.getElementById("modal-rm").value;
+
+    fetch('/update_full_deployment', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ feature, ambiente, estado, fecha, release_manager })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        closeModal();
+        location.reload();
+      } else {
+        alert("Error al guardar.");
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
