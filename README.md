@@ -46,14 +46,14 @@ source ~/.zshrc
 or 
 source ~/.bashrc
 
-# Install Python 3.13
-pyenv install 3.13
+# Install Python 3.13.3
+pyenv install 3.13.3
 
-# Set Python 3.13 as the local version for this project
-pyenv local 3.13
+# Set Python 3.13.3 as the local version for this project
+pyenv local 3.13.3
 
 # Verify installation
-python --version  # Should show Python 3.13
+python --version  # Should show Python 3.13.3
 ```
 
 ### 3. Create a Virtual Environment
