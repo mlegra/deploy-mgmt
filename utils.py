@@ -1,6 +1,22 @@
 from datetime import datetime
 from collections import Counter, defaultdict
 
+def get_fully_deployed_features(deployments, ambiente_options):
+    """
+    Returns a list of feature names that are fully deployed (Valid in all environments).
+    """
+    valid_envs_by_feature = defaultdict(set)
+    for row in deployments:
+        if row["estado"] == "Valid" and row["ambiente"]:
+            valid_envs_by_feature[row["name"]].add(row["ambiente"])
+
+    required_envs = set(ambiente_options)
+    fully_deployed_features = [
+        f for f, envs in valid_envs_by_feature.items()
+        if required_envs.issubset(envs)
+    ]
+    return fully_deployed_features
+
 def calculate_kpis(filtered_deployments, ambiente_options):
     total = len(filtered_deployments)
     failed = sum(1 for d in filtered_deployments if d["estado"] == "Failed")
@@ -20,17 +36,8 @@ def calculate_kpis(filtered_deployments, ambiente_options):
     else:
         avg_per_day = 0
 
-    # ✅ Calculate fully deployed features
-    valid_envs_by_feature = defaultdict(set)
-    for row in filtered_deployments:
-        if row["estado"] == "Valid" and row["ambiente"]:
-            valid_envs_by_feature[row["name"]].add(row["ambiente"])
-
-    required_envs = set(ambiente_options)
-    fully_deployed_features = [
-        f for f, envs in valid_envs_by_feature.items()
-        if required_envs.issubset(envs)
-    ]
+    # ✅ Re-use the shared function for fully deployed
+    fully_deployed_features = get_fully_deployed_features(filtered_deployments, ambiente_options)
     fully_deployed_count = len(fully_deployed_features)
 
     return {
@@ -40,5 +47,5 @@ def calculate_kpis(filtered_deployments, ambiente_options):
         "most_active_env": most_active_env,
         "top_rm": top_rm,
         "avg_per_day": avg_per_day,
-        "fully_deployed": fully_deployed_count  # ✅ NEW KPI
+        "fully_deployed": fully_deployed_count  # ✅ Consistent with /reports
     }

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from datetime import date
 from datetime import datetime
 from collections import defaultdict
-from utils import calculate_kpis
+from utils import calculate_kpis, get_fully_deployed_features
 
 from model import (
     create_db, add_or_get_feature, save_deployment,
@@ -168,6 +168,35 @@ def reports():
         and (not filter_ambiente or r["ambiente"] == filter_ambiente)
         and within_date_range(r)
     ]
+
+        # === Prepare Daily Deployments Count ===
+    from collections import Counter
+
+    deployments_per_day = Counter()
+    for row in filtered_deployments:
+        if row["fecha"]:
+            deployments_per_day[row["fecha"]] += 1
+
+    daily_deployments_data = [
+        {"date": date_str, "count": deployments_per_day[date_str]}
+        for date_str in sorted(deployments_per_day.keys())
+    ]
+
+    # === Prepare Cumulative Fully-Deployed Over Time ===
+
+    # First, get all valid deployments (those that affect "fully deployed")
+    valid_rows = [row for row in filtered_deployments if row["estado"] == "Valid"]
+
+    # Build list of all dates we want to plot
+    dates = sorted(set(row["fecha"] for row in valid_rows if row["fecha"]))
+
+    # For each date, compute "as of that day" fully deployed count
+    cumulative_data = []
+    for date_cutoff in dates:
+        rows_up_to_date = [r for r in valid_rows if r["fecha"] <= date_cutoff]
+        fully_deployed_features = get_fully_deployed_features(rows_up_to_date, ambiente_options)
+        cumulative_data.append({"date": date_cutoff, "count": len(fully_deployed_features)})
+
     
 
     return render_template("reports.html",
@@ -178,7 +207,9 @@ def reports():
                            filter_estado=filter_estado,
                            filter_ambiente=filter_ambiente,
                            start_date=start_date,
-                           end_date=end_date)
+                           end_date=end_date,
+                           daily_deployments_data=daily_deployments_data,
+                           cumulative_fully_deployed_data=cumulative_data)
 
 
 

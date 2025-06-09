@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-black text-white px-4 py-6">
 
@@ -158,6 +159,114 @@
   <p class="text-gray-400 italic mt-6">No se encontraron resultados.</p>
   {% endif %}
 </div>
+
+<!-- 🚀 Responsive 2-column grid for charts -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+
+  <!-- 📈 Daily Deployments Chart -->
+  <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+    <h2 class="text-green-400 text-lg font-semibold mb-4">📈 Daily Deployments Count</h2>
+    <canvas id="dailyDeploymentsChart" style="max-height: 200px;"></canvas>
+  </div>
+
+  <!-- 📈 Cumulative Fully-Deployed Chart -->
+  <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+    <h2 class="text-cyan-400 text-lg font-semibold mb-4">📈 Cumulative Fully-Deployed Over Time</h2>
+    <canvas id="cumulativeDeploymentsChart"></canvas>
+  </div>
+
+</div>
+
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function () {
+    const dailyCtx = document.getElementById('dailyDeploymentsChart').getContext('2d');
+    const dailyData = JSON.parse('{{ daily_deployments_data | tojson | safe }}');
+    const dailyLabels = dailyData.map(item => item.date);
+    const dailyCounts = dailyData.map(item => item.count);
+  
+    new Chart(dailyCtx, {
+      type: 'bar',
+      data: {
+        labels: dailyLabels,
+        datasets: [{
+          label: 'Deployments',
+          data: dailyCounts,
+          backgroundColor: 'rgba(0, 255, 128, 0.6)',
+          borderColor: 'rgba(0, 255, 128, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,   // Allow CSS max-height
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Date', color: '#ccc' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Count', color: '#ccc' } }
+        },
+        plugins: {
+          legend: { labels: { color: '#fff' } }
+        }
+      }
+    });
+  });
+  </script>
+
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function () {
+    const cumCtx = document.getElementById('cumulativeDeploymentsChart').getContext('2d');
+    const cumData = JSON.parse('{{ cumulative_fully_deployed_data | tojson | safe }}');
+    const cumLabels = cumData.map(item => item.date);
+    const cumCounts = cumData.map(item => item.count);
+  
+    const maxCumValue = Math.max(...cumCounts);
+  
+    new Chart(cumCtx, {
+      type: 'line',
+      data: {
+        labels: cumLabels,
+        datasets: [{
+          label: 'Fully Deployed (Cumulative)',
+          data: cumCounts,
+          borderColor: 'rgba(0, 128, 255, 1)',
+          backgroundColor: 'rgba(0, 128, 255, 0.2)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        maintainAspectRatio: true,
+        aspectRatio: 2.5,
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Date', color: '#ccc' } },
+          y: {
+            beginAtZero: true,
+            min: 0,
+            max: maxCumValue < 5 ? 5 : maxCumValue,   // Dynamic but minimum 5
+            ticks: {
+              stepSize: 1,
+              callback: function(value) {
+                return Number.isInteger(value) ? value : '';
+              },
+              color: '#ccc'
+            },
+            title: { display: true, text: 'Cumulative Count', color: '#ccc' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: '#fff' } }
+        }
+      }
+    });
+  });
+  </script>
+  
+  
+
+  
+
 
 <!-- 💾 CSV Export Script -->
 <script>
