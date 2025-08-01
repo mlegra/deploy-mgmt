@@ -112,3 +112,6 @@ def update_deployment():
             )
             return jsonify(success=True)
     return jsonify(success=False, message="Feature not found"), 400
+
+if __name__ == '__main__':
+    app.run(debug=True)
