@@ -19,9 +19,9 @@ today = date.today().isoformat()
 @app.route("/", methods=["GET", "POST"])
 def index():
     clients = get_all_clients()
-    client_name = request.args.get("client")
-    solution_name = request.args.get("solution")
-    product_name = request.args.get("product")
+    client_name = request.args.get("client") or request.form.get("client")
+    solution_name = request.args.get("solution") or request.form.get("solution")
+    product_name = request.args.get("product") or request.form.get("product")
 
     selected_client_id = get_or_create_client(client_name) if client_name else None
     selected_solution_id = get_or_create_solution(selected_client_id, solution_name) if selected_client_id and solution_name else None
@@ -88,6 +88,37 @@ def get_environments():
     solution_id = get_or_create_solution(client_id, data.get("solution"))
     product_id = get_or_create_product(solution_id, data.get("product"))
     return jsonify(get_environments_by_product(product_id))
+
+@app.route("/get_deployment_details", methods=["POST"])
+def get_deployment_details():
+    data = request.get_json()
+    client_id = get_or_create_client(data["client"])
+    solution_id = get_or_create_solution(client_id, data["solution"])
+    product_id = get_or_create_product(solution_id, data["product"])
+
+    features = get_features_by_product(product_id)
+    for f in features:
+        if f["name"] == data["feature"]:
+            feature_id = f["id"]
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT d.estado, d.fecha, d.release_manager
+                FROM deployments d
+                JOIN environments e ON d.environment_id = e.id
+                WHERE d.feature_id = ? AND e.name = ?
+            """, (feature_id, data["ambiente"]))
+            row = cur.fetchone()
+            conn.close()
+            if row:
+                return jsonify({
+                    "estado": row["estado"],
+                    "fecha": row["fecha"],
+                    "release_manager": row["release_manager"]
+                })
+            else:
+                return jsonify({})
+    return jsonify({}), 404
 
 @app.route("/update_full_deployment", methods=["POST"])
 def update_deployment():
