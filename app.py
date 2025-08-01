@@ -1,41 +1,46 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from datetime import date
-from datetime import datetime
-from collections import defaultdict
-from utils import calculate_kpis
-
 from model import (
-    create_db, add_or_get_feature, save_deployment,
-    get_all_features, get_all_feature_names, update_env_status,
-    update_full_deployment, get_all_deployment_details
+    create_db, get_or_create_client, get_all_clients,
+    get_or_create_product, get_products_by_client,
+    add_or_get_feature, get_features_by_product,
+    save_deployment, get_all_deployments_by_product,
+    update_full_deployment, get_environments_by_product
 )
 
 app = Flask(__name__)
-today = date.today().isoformat()
 create_db()
 
-ambiente_options = ["PreDEV", "DEV", "UAT", "PPD", "PRD"]
-estado_options = ["Valid", "Invalid", "Failed", "Archived", "In-PRD"]
-type_options = ["PersDB", "App", "MDSGen", "MDSHealth"]
 repos_options = ["Repo1", "Repo2"]
 rm_options = ["Michel LF", "Elizabet RC", "Yasser F"]
-app_options = ["INSIS", "Premium"]
-tenancy_options = ["Uruguay", "Panama"]
+today = date.today().isoformat()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    clients = get_all_clients()
+    client_name = request.args.get("client")
+    product_name = request.args.get("product")
+
+    selected_client_id = get_or_create_client(client_name) if client_name else None
+    selected_product_id = get_or_create_product(selected_client_id, product_name) if selected_client_id and product_name else None
+
+    products = get_products_by_client(selected_client_id) if selected_client_id else []
+    features = get_features_by_product(selected_product_id) if selected_product_id else []
+    deployments = get_all_deployments_by_product(selected_product_id) if selected_product_id else []
+    ambiente_options = get_environments_by_product(selected_product_id) if selected_product_id else []
+
     if request.method == "POST":
         form = request.form
+
+        # Create or get feature
         feature_data = {
-            "name": form["name"],
+            "name": form["feature_name"],
             "repositorio": form["repositorio"],
-            "type": form["type"],
-            "application": form["application"],
-            "tenancy": form["tenancy"],
             "master": form["master"]
         }
-        feature_id = add_or_get_feature(feature_data)
+        feature_id = add_or_get_feature(selected_product_id, feature_data)
 
+        # Create deployment
         deployment_data = {
             "ambiente": form["ambiente"],
             "estado": form["estado"],
@@ -43,144 +48,67 @@ def index():
             "release_manager": form["release_manager"]
         }
         save_deployment(feature_id, deployment_data)
-        return redirect(url_for("index"))
 
-    # Get filters
-    filtro = request.args.get("filtro", "").strip()
-    filter_estado = request.args.get("filter_estado", "")
-    filter_ambiente = request.args.get("filter_ambiente", "")
-
-    # 🧩 Full dataset for matrix table (ALWAYS UNFILTERED)
-    rows_all = get_all_features()
-
-    # 🎯 Filtered list only for flat result table
-    rows_filtered = get_all_features()
-    filtered_deployments = [
-        r for r in rows_filtered
-        if (not filtro or
-            filtro.lower() in r["name"].lower() or
-            filtro.lower() in r["repositorio"].lower() or
-            filtro.lower() in (r["estado"] or "").lower())
-        and (not filter_estado or r["estado"] == filter_estado)
-        and (not filter_ambiente or r["ambiente"] == filter_ambiente)
-    ]
-
-    # ✅ Build matrix view using full data
-    grouped = defaultdict(lambda: {
-        "repositorio": "", "type": "", "application": "", "master": "",
-        "env_status": {env: "" for env in ambiente_options}
-    })
-
-    for row in rows_all:
-        name = row["name"]
-        grouped[name]["repositorio"] = row["repositorio"]
-        grouped[name]["type"] = row["type"]
-        grouped[name]["application"] = row["application"]
-        grouped[name]["master"] = row["master"]
-        if row["ambiente"]:
-            grouped[name]["env_status"][row["ambiente"]] = row["estado"]
-
-    deployment_details = get_all_deployment_details()
-    kpis = calculate_kpis(filtered_deployments, ambiente_options)
-
+        return redirect(url_for("index", client=client_name, product=product_name))
 
     return render_template("index.html",
-                           grouped_deployments=grouped,
-                           deployment_details=deployment_details,
-                           ambiente_options=ambiente_options,
-                           estado_options=estado_options,
-                           type_options=type_options,
-                           repos_options=repos_options,
-                           rm_options=rm_options,
-                           app_options=app_options,
-                           tenancy_options=tenancy_options,
-                           feature_names=get_all_feature_names(),
-                           today=today,
-                           filtro=filtro,
-                           filter_estado=filter_estado,
-                           filter_ambiente=filter_ambiente,
-                           filtered_deployments=filtered_deployments,
-                           kpis=kpis)
+        clients=clients,
+        selected_client=client_name,
+        products=products,
+        selected_product=product_name,
+        features=features,
+        deployments=deployments,
+        ambiente_options=ambiente_options,
+        repos_options=repos_options,
+        rm_options=rm_options,
+        today=today
+    )
 
+@app.route("/get_products", methods=["POST"])
+def get_products():
+    data = request.get_json()
+    client_name = data.get("client")
+    client_id = get_or_create_client(client_name)
+    products = get_products_by_client(client_id)
+    return jsonify([{"name": p["name"]} for p in products])
+
+@app.route("/get_features", methods=["POST"])
+def get_features():
+    data = request.get_json()
+    client_name = data.get("client")
+    product_name = data.get("product")
+
+    client_id = get_or_create_client(client_name)
+    product_id = get_or_create_product(client_id, product_name)
+    features = get_features_by_product(product_id)
+    return jsonify([{"name": f["name"]} for f in features])
+
+@app.route("/get_environments", methods=["POST"])
+def get_environments():
+    data = request.get_json()
+    client_name = data.get("client")
+    product_name = data.get("product")
+
+    client_id = get_or_create_client(client_name)
+    product_id = get_or_create_product(client_id, product_name)
+    ambientes = get_environments_by_product(product_id)
+    return jsonify(ambientes)
 
 @app.route("/update_full_deployment", methods=["POST"])
-def update_full_deployment_route():
+def update_deployment():
     data = request.get_json()
-    feature_name = data.get("feature")
-    ambiente = data.get("ambiente")
-    estado = data.get("estado")
-    fecha = data.get("fecha")
-    release_manager = data.get("release_manager")
+    client_id = get_or_create_client(data["client"])
+    product_id = get_or_create_product(client_id, data["product"])
 
-    rows = get_all_features()
-    for row in rows:
-        if row["name"] == feature_name:
-            feature_id = row["feature_id"]
-            update_full_deployment(feature_id, ambiente, estado, fecha, release_manager)
+    features = get_features_by_product(product_id)
+    for f in features:
+        if f["name"] == data["feature"]:
+            update_full_deployment(
+                feature_id=f["id"],
+                ambiente=data["ambiente"],
+                estado=data["estado"],
+                fecha=data["fecha"],
+                release_manager=data["release_manager"]
+            )
             return jsonify(success=True)
-
     return jsonify(success=False, message="Feature not found"), 400
-
-@app.route("/get_deployment_details", methods=["POST"])
-def get_deployment_details():
-    data = request.get_json()
-    feature_name = data.get("feature")
-    ambiente = data.get("ambiente")
-
-    rows = get_all_features()
-    for row in rows:
-        if row["name"] == feature_name and row["ambiente"] == ambiente:
-            return jsonify(success=True,
-                           estado=row["estado"],
-                           fecha=row["fecha"],
-                           release_manager=row["release_manager"])
-    return jsonify(success=False)
-
-@app.route("/reports", methods=["GET"])
-def reports():
-    filtro = request.args.get("filtro", "").strip()
-    filter_estado = request.args.get("filter_estado", "")
-    filter_ambiente = request.args.get("filter_ambiente", "")
-    start_date = request.args.get("start_date", "")
-    end_date = request.args.get("end_date", "")
-
-    rows = get_all_features()
-
-    def within_date_range(row):
-        if not row["fecha"]:
-            return False
-        row_date = datetime.strptime(row["fecha"], "%Y-%m-%d")
-        if start_date:
-            if row_date < datetime.strptime(start_date, "%Y-%m-%d"):
-                return False
-        if end_date:
-            if row_date > datetime.strptime(end_date, "%Y-%m-%d"):
-                return False
-        return True
-
-    filtered_deployments = [
-        r for r in rows
-        if (not filtro or
-            filtro.lower() in r["name"].lower() or
-            filtro.lower() in r["repositorio"].lower() or
-            filtro.lower() in (r["estado"] or "").lower())
-        and (not filter_estado or r["estado"] == filter_estado)
-        and (not filter_ambiente or r["ambiente"] == filter_ambiente)
-        and within_date_range(r)
-    ]
-    
-
-    return render_template("reports.html",
-                           filtered_deployments=filtered_deployments,
-                           ambiente_options=ambiente_options,
-                           estado_options=estado_options,
-                           filtro=filtro,
-                           filter_estado=filter_estado,
-                           filter_ambiente=filter_ambiente,
-                           start_date=start_date,
-                           end_date=end_date)
-
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
