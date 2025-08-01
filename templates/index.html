@@ -37,16 +37,16 @@
       </div>
     </div>
 
-    <!-- Formulario de ingreso -->
+    <!-- Formulario -->
     <form method="POST" action="/" class="bg-gray-800 p-6 rounded space-y-4">
       <input type="hidden" name="client" value="{{ selected_client }}">
       <input type="hidden" name="solution" value="{{ selected_solution }}">
       <input type="hidden" name="product" value="{{ selected_product }}">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label>Cliente</label>
-          <select name="client" id="client" required class="w-full bg-gray-700 p-2 rounded">
+          <select name="client" id="client" class="w-full bg-gray-700 p-2 rounded">
             {% for c in clients %}
               <option value="{{ c.name }}" {% if selected_client == c.name %}selected{% endif %}>{{ c.name }}</option>
             {% endfor %}
@@ -54,7 +54,7 @@
         </div>
         <div>
           <label>Solución</label>
-          <select name="solution" id="solution" required class="w-full bg-gray-700 p-2 rounded">
+          <select name="solution" id="solution" class="w-full bg-gray-700 p-2 rounded">
             {% for s in solutions %}
               <option value="{{ s.name }}" {% if selected_solution == s.name %}selected{% endif %}>{{ s.name }}</option>
             {% endfor %}
@@ -62,7 +62,7 @@
         </div>
         <div>
           <label>Producto</label>
-          <select name="product" id="product" required class="w-full bg-gray-700 p-2 rounded">
+          <select name="product" id="product" class="w-full bg-gray-700 p-2 rounded">
             {% for p in products %}
               <option value="{{ p.name }}" {% if selected_product == p.name %}selected{% endif %}>{{ p.name }}</option>
             {% endfor %}
@@ -70,7 +70,7 @@
         </div>
         <div>
           <label>Ambiente</label>
-          <select name="ambiente" required class="w-full bg-gray-700 p-2 rounded">
+          <select name="ambiente" class="w-full bg-gray-700 p-2 rounded">
             {% for a in ambiente_options %}
               <option value="{{ a }}">{{ a }}</option>
             {% endfor %}
@@ -78,14 +78,14 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid md:grid-cols-3 gap-4">
         <div>
           <label>Feature</label>
           <input type="text" name="name" required class="w-full bg-gray-700 p-2 rounded">
         </div>
         <div>
           <label>Repositorio</label>
-          <select name="repositorio" required class="w-full bg-gray-700 p-2 rounded">
+          <select name="repositorio" class="w-full bg-gray-700 p-2 rounded">
             {% for r in repos_options %}
               <option value="{{ r }}">{{ r }}</option>
             {% endfor %}
@@ -97,14 +97,14 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label>Fecha</label>
-          <input type="date" name="fecha" value="{{ today }}" required class="w-full bg-gray-700 p-2 rounded">
+          <input type="date" name="fecha" value="{{ today }}" class="w-full bg-gray-700 p-2 rounded">
         </div>
         <div>
           <label>Release Manager</label>
-          <select name="release_manager" required class="w-full bg-gray-700 p-2 rounded">
+          <select name="release_manager" class="w-full bg-gray-700 p-2 rounded">
             {% for rm in rm_options %}
               <option value="{{ rm }}">{{ rm }}</option>
             {% endfor %}
@@ -112,186 +112,4 @@
         </div>
       </div>
 
-      <div class="text-right">
-        <button type="submit" class="bg-cyan-500 px-4 py-2 rounded hover:bg-cyan-600">💾 Guardar</button>
-      </div>
-    </form>
-
-    <!-- Tabla de despliegues -->
-    <h2 class="text-xl text-cyan-300 font-semibold mt-10 mb-3">📄 Tabla de Despliegues</h2>
-    {% if deployments %}
-    <div class="overflow-x-auto">
-      <table class="w-full table-auto border border-gray-700 text-sm">
-        <thead class="bg-gray-700 text-cyan-200">
-          <tr>
-            <th class="border px-2 py-1">Feature</th>
-            <th class="border px-2 py-1">Repositorio</th>
-            <th class="border px-2 py-1">Script</th>
-            {% for env in ambiente_options %}
-              <th class="border px-2 py-1">{{ env }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for name, data in deployments.items() %}
-          <tr class="bg-gray-800 hover:bg-gray-700">
-            <td class="border px-2 py-1">{{ name }}</td>
-            <td class="border px-2 py-1">{{ data.repositorio }}</td>
-            <td class="border px-2 py-1">{{ data.master }}</td>
-            {% for env in ambiente_options %}
-              $1 ✏️ <button class="edit-env-btn text-xs underline" data-feature="{{ name }}" data-env="{{ env }}">✏️</button> $2
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-      <p class="text-gray-400">No hay despliegues registrados para este producto.</p>
-    {% endif %}
-  </div>
-<script>
-  document.getElementById("client").addEventListener("change", function () {
-    const client = this.value;
-    fetch("/get_solutions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const solutionSelect = document.getElementById("solution");
-      solutionSelect.innerHTML = "<option value=''>Seleccione...</option>";
-      data.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s.name;
-        opt.text = s.name;
-        solutionSelect.appendChild(opt);
-      });
-    });
-  });
-
-  document.getElementById("solution").addEventListener("change", function () {
-    const client = document.getElementById("client").value;
-    const solution = this.value;
-    fetch("/get_products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client, solution })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const productSelect = document.getElementById("product");
-      productSelect.innerHTML = "<option value=''>Seleccione...</option>";
-      data.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.name;
-        opt.text = p.name;
-        productSelect.appendChild(opt);
-      });
-    });
-  });
-
-  document.getElementById("product").addEventListener("change", function () {
-    const client = document.getElementById("client").value;
-    const solution = document.getElementById("solution").value;
-    const product = this.value;
-    fetch("/get_environments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client, solution, product })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const envSelect = document.querySelector("select[name='ambiente']");
-      envSelect.innerHTML = "<option value=''>Seleccione...</option>";
-      data.forEach(env => {
-        const opt = document.createElement("option");
-        opt.value = env;
-        opt.text = env;
-        envSelect.appendChild(opt);
-      });
-    });
-  });
-</script>
-<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-gray-800 p-6 rounded w-96 space-y-4">
-    <h3 class="text-lg font-semibold text-cyan-300">Editar Despliegue</h3>
-    <input type="hidden" id="modalFeature">
-    <input type="hidden" id="modalEnv">
-    <div>
-      <label>Estado</label>
-      <select id="modalEstado" class="w-full bg-gray-700 p-2 rounded">
-        <option value="Valid">Valid</option>
-        <option value="Failed">Failed</option>
-      </select>
-    </div>
-    <div>
-      <label>Fecha</label>
-      <input type="date" id="modalFecha" class="w-full bg-gray-700 p-2 rounded">
-    </div>
-    <div>
-      <label>Release Manager</label>
-      <select id="modalRM" class="w-full bg-gray-700 p-2 rounded">
-        {% for rm in rm_options %}
-          <option value="{{ rm }}">{{ rm }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="text-right">
-      <button id="saveModal" class="bg-cyan-500 px-4 py-1 rounded hover:bg-cyan-600">Guardar</button>
-      <button onclick="document.getElementById('editModal').classList.add('hidden')" class="ml-2 text-sm text-gray-400">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  document.querySelectorAll(".edit-env-btn").forEach(btn => {
-    btn.addEventListener("click", function () {
-      const feature = this.dataset.feature;
-      const ambiente = this.dataset.env;
-      const client = document.getElementById("client").value;
-      const solution = document.getElementById("solution").value;
-      const product = document.getElementById("product").value;
-
-      fetch("/get_deployment_details", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client, solution, product, feature, ambiente })
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("modalFeature").value = feature;
-        document.getElementById("modalEnv").value = ambiente;
-        document.getElementById("modalEstado").value = data.estado || "Valid";
-        document.getElementById("modalFecha").value = data.fecha || "{{ today }}";
-        document.getElementById("modalRM").value = data.release_manager || "";
-        document.getElementById("editModal").classList.remove("hidden");
-      });
-    });
-  });
-
-  document.getElementById("saveModal").addEventListener("click", function () {
-    const client = document.getElementById("client").value;
-    const solution = document.getElementById("solution").value;
-    const product = document.getElementById("product").value;
-    const feature = document.getElementById("modalFeature").value;
-    const ambiente = document.getElementById("modalEnv").value;
-    const estado = document.getElementById("modalEstado").value;
-    const fecha = document.getElementById("modalFecha").value;
-    const release_manager = document.getElementById("modalRM").value;
-
-    fetch("/update_full_deployment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client, solution, product, feature, ambiente, estado, fecha, release_manager })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) window.location.reload();
-    });
-  });
-</script>
-</body>
-</html>
-
+     
