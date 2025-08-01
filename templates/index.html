@@ -1,89 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Registro de Despliegues</title>
+  <title>DevOps Deployments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-black text-white px-4 py-6">
-  <header class="bg-gray-900 p-4 rounded mb-6">
-    <div class="text-xl font-bold text-orange-400">🛠 DevOps Dashboard</div>
-  </header>
-
-  <div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-bold text-cyan-400 mb-8">📦 Registro de Despliegues del Equipo DevOps</h1>
-
-    <!-- 📋 Nuevo despliegue -->
-    <form method="POST" action="/" class="bg-gray-900 p-6 rounded mb-10 space-y-4">
-      <!-- Select Cliente / Solucion -->
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold text-cyan-400 mb-6">📋 Registrar Despliegue</h1>
+    <form method="POST" action="/" class="bg-gray-900 p-6 rounded-lg space-y-4 mb-10">
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Cliente</label>
-          <select id="client" name="client" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">Seleccione...</option>
+          <select name="client" id="client" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
             {% for c in clients %}
-            <option value="{{ c.name }}" {% if selected_client == c.name %}selected{% endif %}>{{ c.name }}</option>
+              <option value="{{ c.name }}" {% if selected_client == c.name %}selected{% endif %}>{{ c.name }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
           <label class="block font-semibold mb-1">Solución</label>
-          <select id="solution" name="solution" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">Seleccione...</option>
+          <select name="solution" id="solution" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
             {% for s in solutions %}
-            <option value="{{ s.name }}" {% if selected_solution == s.name %}selected{% endif %}>{{ s.name }}</option>
+              <option value="{{ s.name }}" {% if selected_solution == s.name %}selected{% endif %}>{{ s.name }}</option>
             {% endfor %}
           </select>
         </div>
       </div>
-
-      <!-- Select Producto / Ambiente -->
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Producto</label>
-          <select id="product" name="product" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">Seleccione...</option>
+          <select name="product" id="product" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
             {% for p in products %}
-            <option value="{{ p.name }}" {% if selected_product == p.name %}selected{% endif %}>{{ p.name }}</option>
+              <option value="{{ p.name }}" {% if selected_product == p.name %}selected{% endif %}>{{ p.name }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
           <label class="block font-semibold mb-1">Ambiente</label>
-          <select id="ambiente" name="ambiente" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">Seleccione...</option>
+          <select name="ambiente" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
             {% for a in ambiente_options %}
-            <option value="{{ a }}">{{ a }}</option>
+              <option value="{{ a }}">{{ a }}</option>
             {% endfor %}
           </select>
         </div>
       </div>
-
-      <!-- Resto del formulario -->
-      <div class="grid">
+      <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Feature</label>
           <input type="text" name="name" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
         </div>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Repositorio</label>
           <select name="repositorio" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
             {% for r in repos_options %}
-            <option value="{{ r }}">{{ r }}</option>
+              <option value="{{ r }}">{{ r }}</option>
             {% endfor %}
           </select>
         </div>
-        <div>
-          <label class="block font-semibold mb-1">Script / Archivo</label>
-          <input type="text" name="master" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-        </div>
       </div>
-
+      <div>
+        <label class="block font-semibold mb-1">Script / Archivo</label>
+        <input type="text" name="master" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+      </div>
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Fecha</label>
@@ -93,101 +73,58 @@
           <label class="block font-semibold mb-1">Release Manager</label>
           <select name="release_manager" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
             {% for rm in rm_options %}
-            <option value="{{ rm }}">{{ rm }}</option>
+              <option value="{{ rm }}">{{ rm }}</option>
             {% endfor %}
           </select>
         </div>
       </div>
-
-      <div class="grid">
-        <div>
-          <label class="block font-semibold mb-1">Estado</label>
-          <select name="estado" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="Valid">Valid</option>
-            <option value="Failed">Failed</option>
-          </select>
-        </div>
+      <div>
+        <label class="block font-semibold mb-1">Estado</label>
+        <select name="estado" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+          <option value="Valid">Valid</option>
+          <option value="Failed">Failed</option>
+        </select>
       </div>
-
       <div class="text-right">
         <button type="submit" class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 py-2 rounded">💾 Guardar</button>
       </div>
     </form>
+
+    <h1 class="text-3xl font-bold text-cyan-400 mb-6">📄 Tabla de Despliegues</h1>
+    {% if deployments %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm border border-gray-700">
+        <thead>
+          <tr class="bg-gray-800 text-cyan-300">
+            <th class="px-3 py-2 border border-gray-700">Feature</th>
+            <th class="px-3 py-2 border border-gray-700">Repositorio</th>
+            <th class="px-3 py-2 border border-gray-700">Script</th>
+            {% for env in ambiente_options %}
+            <th class="px-3 py-2 border border-gray-700">{{ env }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for name, data in deployments.items() %}
+          <tr class="bg-gray-900 hover:bg-gray-800">
+            <td class="px-3 py-2 border border-gray-700">{{ name }}</td>
+            <td class="px-3 py-2 border border-gray-700">{{ data.repositorio }}</td>
+            <td class="px-3 py-2 border border-gray-700">{{ data.master }}</td>
+            {% for env in ambiente_options %}
+            <td class="px-3 py-2 border border-gray-700 text-center">
+              {% if data.env_status[env] %}
+                {% if data.env_status[env] == "Valid" %}✅{% else %}❌{% endif %}
+              {% else %}-{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="text-gray-400">No hay despliegues disponibles.</p>
+    {% endif %}
   </div>
-
-  <script>
-    document.getElementById("client").addEventListener("change", function () {
-      const client = this.value;
-      fetch("/get_solutions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const solutionSelect = document.getElementById("solution");
-        solutionSelect.innerHTML = "<option value=''>Seleccione...</option>";
-        data.forEach(s => {
-          const opt = document.createElement("option");
-          opt.value = s.name;
-          opt.text = s.name;
-          solutionSelect.appendChild(opt);
-        });
-      });
-    });
-
-    document.getElementById("solution").addEventListener("change", function () {
-      const client = document.getElementById("client").value;
-      const solution = this.value;
-      fetch("/get_products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client, solution })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const productSelect = document.getElementById("product");
-        productSelect.innerHTML = "<option value=''>Seleccione...</option>";
-        data.forEach(p => {
-          const opt = document.createElement("option");
-          opt.value = p.name;
-          opt.text = p.name;
-          productSelect.appendChild(opt);
-        });
-        // Cargar ambientes al cambiar producto
-        productSelect.dispatchEvent(new Event("change"));
-      });
-    });
-
-    document.getElementById("product").addEventListener("change", function () {
-      const client = document.getElementById("client").value;
-      const solution = document.getElementById("solution").value;
-      const product = this.value;
-      fetch("/get_environments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client, solution, product })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const envSelect = document.getElementById("ambiente");
-        envSelect.innerHTML = "<option value=''>Seleccione...</option>";
-        data.forEach(env => {
-          const opt = document.createElement("option");
-          opt.value = env;
-          opt.text = env;
-          envSelect.appendChild(opt);
-        });
-      });
-    });
-
-    // 🔄 Forzar carga de ambientes si ya hay producto precargado
-    window.addEventListener("DOMContentLoaded", () => {
-      const productSelect = document.getElementById("product");
-      if (productSelect.value) {
-        productSelect.dispatchEvent(new Event("change"));
-      }
-    });
-  </script>
 </body>
 </html>
