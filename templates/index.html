@@ -1,370 +1,296 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Registro de Despliegues</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Despliegues DevOps</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-black text-white px-4 py-6">
-  <header x-data="{ open: false }" class="sticky top-0 z-50 bg-black mb-6">
-    <div class="flex justify-between items-center py-4 px-4 md:px-6 bg-gray-900 rounded-md">
-      <div class="text-lg font-bold text-orange-400 flex items-center gap-2">
-        <span>🛠</span> <span>DevOps Dashboard</span>
+<body class="bg-gray-900 text-white px-6 py-8">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold text-cyan-400 mb-4">📋 Registro de Despliegues</h1>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+      <div class="bg-gray-800 p-4 rounded text-center">
+        <div class="text-sm text-gray-400">Total Deploys</div>
+        <div class="text-2xl font-bold text-cyan-400">{{ total_deploys }}</div>
       </div>
-      <div class="md:hidden">
-        <button @click="open = !open" class="text-white focus:outline-none">
-          <template x-if="!open">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </template>
-          <template x-if="open">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </template>
-        </button>
+      <div class="bg-gray-800 p-4 rounded text-center">
+        <div class="text-sm text-gray-400">Failed</div>
+        <div class="text-2xl font-bold text-red-400">{{ failed_count }}</div>
       </div>
-      <nav class="hidden md:flex space-x-6 text-sm items-center">
-        <a href="/" class="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">🏠 <span>Dashboard</span></a>
-        <a href="/reports" class="text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1">📊 <span>Reportes</span></a>
-      </nav>
+      <div class="bg-gray-800 p-4 rounded text-center">
+        <div class="text-sm text-gray-400">Success Rate</div>
+        <div class="text-2xl font-bold text-green-400">{{ success_rate }}%</div>
+      </div>
+      <div class="bg-gray-800 p-4 rounded text-center">
+        <div class="text-sm text-gray-400">Top Env</div>
+        <div class="text-xl font-bold text-yellow-400">{{ top_env }}</div>
+      </div>
+      <div class="bg-gray-800 p-4 rounded text-center">
+        <div class="text-sm text-gray-400">Top RM</div>
+        <div class="text-xl font-bold text-indigo-400">{{ top_rm }}</div>
+      </div>
+      <div class="bg-gray-800 p-4 rounded text-center">
+        <div class="text-sm text-gray-400">Fully Deployed</div>
+        <div class="text-2xl font-bold text-green-300">{{ fully_deployed }}</div>
+      </div>
     </div>
-    <div x-show="open" x-transition class="md:hidden bg-gray-800 mt-2 p-4 rounded-md space-y-2">
-      <a href="/" class="block text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-2">🏠 Dashboard</a>
-      <a href="/reports" class="block text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-2">📊 Reportes</a>
-    </div>
-  </header>
-  
 
-<div class="max-w-5xl mx-auto">
+    <!-- Formulario de ingreso -->
+    <form method="POST" action="/" class="bg-gray-800 p-6 rounded space-y-4">
+      <input type="hidden" name="client" value="{{ selected_client }}">
+      <input type="hidden" name="solution" value="{{ selected_solution }}">
+      <input type="hidden" name="product" value="{{ selected_product }}">
 
-
-  <h1 class="text-3xl font-bold text-cyan-400 mb-8">📦 Registro de Despliegues del Equipo DevOps</h1>
-
-  <!-- 📋 Nuevo despliegue -->
-  <div class="bg-gray-900 p-6 rounded-lg shadow-lg mb-10">
-    <h2 class="text-orange-400 text-xl font-semibold mb-4">📋 Registrar un nuevo despliegue</h2>
-    <form method="POST" action="/">
-      <div class="space-y-4">
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Nombre del Feature</label>
-            <input type="text" id="name" name="name" list="feature_names_list" required
-                   class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <datalist id="feature_names_list">
-              {% for name in feature_names %}
-              <option value="{{ name }}">
-              {% endfor %}
-            </datalist>
-          </div>
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Tipo</label>
-            <select id="type" name="type" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for t in type_options %}
-              <option value="{{ t }}">{{ t }}</option>
-              {% endfor %}
-            </select>
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label>Cliente</label>
+          <select name="client" id="client" required class="w-full bg-gray-700 p-2 rounded">
+            {% for c in clients %}
+              <option value="{{ c.name }}" {% if selected_client == c.name %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
         </div>
-
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Ambiente</label>
-            <select id="ambiente" name="ambiente" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for a in ambiente_options %}
+        <div>
+          <label>Solución</label>
+          <select name="solution" id="solution" required class="w-full bg-gray-700 p-2 rounded">
+            {% for s in solutions %}
+              <option value="{{ s.name }}" {% if selected_solution == s.name %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Producto</label>
+          <select name="product" id="product" required class="w-full bg-gray-700 p-2 rounded">
+            {% for p in products %}
+              <option value="{{ p.name }}" {% if selected_product == p.name %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Ambiente</label>
+          <select name="ambiente" required class="w-full bg-gray-700 p-2 rounded">
+            {% for a in ambiente_options %}
               <option value="{{ a }}">{{ a }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Fecha</label>
-            <input type="date" id="fecha" name="fecha" value="{{ today }}" required
-                   class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Release Manager</label>
-            <select id="release_manager" name="release_manager" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for rm in rm_options %}
-              <option value="{{ rm }}">{{ rm }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Estado</label>
-            <select id="estado" name="estado" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for e in estado_options %}
-              <option value="{{ e }}">{{ e }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Repositorio</label>
-            <select id="repositorio" name="repositorio" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for r in repos_options %}
-              <option value="{{ r }}">{{ r }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Script / Archivo</label>
-            <textarea id="master" name="master" rows="2"
-                      class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
-                      placeholder="deploy.sql"></textarea>
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Aplicación</label>
-            <select id="application" name="application" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for app in app_options %}
-              <option value="{{ app }}">{{ app }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Tenancy</label>
-            <select id="tenancy" name="tenancy" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for t in tenancy_options %}
-              <option value="{{ t }}">{{ t }}</option>
-              {% endfor %}
-            </select>
-          </div>
+            {% endfor %}
+          </select>
         </div>
       </div>
 
-      <div class="mt-6 text-right">
-        <button type="submit"
-                class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 py-2 rounded">
-          💾 Guardar
-        </button>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label>Feature</label>
+          <input type="text" name="name" required class="w-full bg-gray-700 p-2 rounded">
+        </div>
+        <div>
+          <label>Repositorio</label>
+          <select name="repositorio" required class="w-full bg-gray-700 p-2 rounded">
+            {% for r in repos_options %}
+              <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Script</label>
+          <input type="text" name="master" class="w-full bg-gray-700 p-2 rounded">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label>Fecha</label>
+          <input type="date" name="fecha" value="{{ today }}" required class="w-full bg-gray-700 p-2 rounded">
+        </div>
+        <div>
+          <label>Release Manager</label>
+          <select name="release_manager" required class="w-full bg-gray-700 p-2 rounded">
+            {% for rm in rm_options %}
+              <option value="{{ rm }}">{{ rm }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="text-right">
+        <button type="submit" class="bg-cyan-500 px-4 py-2 rounded hover:bg-cyan-600">💾 Guardar</button>
       </div>
     </form>
-    {% if kpis %}
-<div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mt-6 mb-6">
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Total Deploys</p>
-    <p class="text-xl font-bold text-cyan-400">{{ kpis.total }}</p>
-  </div>
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Failed</p>
-    <p class="text-xl font-bold text-red-400">{{ kpis.failed }}</p>
-  </div>
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Success Rate</p>
-    <p class="text-xl font-bold text-green-400">{{ kpis.success_rate }}%</p>
-  </div>
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Top Env</p>
-    <p class="text-xl font-bold text-yellow-400">{{ kpis.most_active_env }}</p>
-  </div>
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Top RM</p>
-    <p class="text-xl font-bold text-indigo-400">{{ kpis.top_rm }}</p>
-  </div>
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Fully Deployed</p>
-    <p class="text-xl font-bold text-green-300">{{ kpis.fully_deployed }}</p>
-  </div>
-  
-  <div class="bg-gray-800 p-4 rounded text-center">
-    <p class="text-sm text-gray-400">Avg/Day</p>
-    <p class="text-xl font-bold text-teal-400">{{ kpis.avg_per_day }}</p>
-  </div>
-</div>
-{% endif %}
 
+    <!-- Tabla de despliegues -->
+    <h2 class="text-xl text-cyan-300 font-semibold mt-10 mb-3">📄 Tabla de Despliegues</h2>
+    {% if deployments %}
+    <div class="overflow-x-auto">
+      <table class="w-full table-auto border border-gray-700 text-sm">
+        <thead class="bg-gray-700 text-cyan-200">
+          <tr>
+            <th class="border px-2 py-1">Feature</th>
+            <th class="border px-2 py-1">Repositorio</th>
+            <th class="border px-2 py-1">Script</th>
+            {% for env in ambiente_options %}
+              <th class="border px-2 py-1">{{ env }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for name, data in deployments.items() %}
+          <tr class="bg-gray-800 hover:bg-gray-700">
+            <td class="border px-2 py-1">{{ name }}</td>
+            <td class="border px-2 py-1">{{ data.repositorio }}</td>
+            <td class="border px-2 py-1">{{ data.master }}</td>
+            {% for env in ambiente_options %}
+              $1 ✏️ <button class="edit-env-btn text-xs underline" data-feature="{{ name }}" data-env="{{ env }}">✏️</button> $2
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="text-gray-400">No hay despliegues registrados para este producto.</p>
+    {% endif %}
   </div>
+<script>
+  document.getElementById("client").addEventListener("change", function () {
+    const client = this.value;
+    fetch("/get_solutions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const solutionSelect = document.getElementById("solution");
+      solutionSelect.innerHTML = "<option value=''>Seleccione...</option>";
+      data.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.text = s.name;
+        solutionSelect.appendChild(opt);
+      });
+    });
+  });
 
-  <!-- 📊 Tabla matriz -->
-  <h2 class="text-orange-400 text-xl font-semibold mb-4">📄 Despliegues</h2>
-  <div class="overflow-x-auto">
-    <table class="w-full table-auto border-collapse text-sm">
-      <thead>
-        <tr>
-          <th class="bg-gray-800 px-4 py-2 border border-gray-700">Feature</th>
-          <th class="bg-gray-800 px-4 py-2 border border-gray-700">Repo</th>
-          <th class="bg-gray-800 px-4 py-2 border border-gray-700">Tipo</th>
-          <th class="bg-gray-800 px-4 py-2 border border-gray-700">App</th>
-          <th class="bg-gray-800 px-4 py-2 border border-gray-700">Script</th>
-          {% for env in ambiente_options %}
-          <th class="bg-gray-800 px-4 py-2 border border-gray-700">{{ env }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for name, data in grouped_deployments.items() %}
-        <tr data-feature="{{ name }}">
-          <td class="border border-gray-700 px-2 py-1">{{ name }}</td>
-          <td class="border border-gray-700 px-2 py-1">{{ data.repositorio }}</td>
-          <td class="border border-gray-700 px-2 py-1">{{ data.type }}</td>
-          <td class="border border-gray-700 px-2 py-1">{{ data.application }}</td>
-          <td class="border border-gray-700 px-2 py-1">{{ data.master.replace('\\n', '<br>') | safe }}</td>
-          {% for env in ambiente_options %}
-          <td class="border border-gray-700 px-2 py-1 text-center env-cell" data-env="{{ env }}">
-            {% if data.env_status[env] %}
-              <span>{{ data.env_status[env] == 'Valid' and '✅' or '❌' }}</span>
-              <button class="edit-env-btn" title="Editar">✎</button>
-            {% else %}
-              <span class="text-gray-500">-</span>
-              <button class="edit-env-btn" title="Agregar">➕</button>
-            {% endif %}
-          </td>
-          {% endfor %}
-        </tr>
+  document.getElementById("solution").addEventListener("change", function () {
+    const client = document.getElementById("client").value;
+    const solution = this.value;
+    fetch("/get_products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, solution })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const productSelect = document.getElementById("product");
+      productSelect.innerHTML = "<option value=''>Seleccione...</option>";
+      data.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.name;
+        opt.text = p.name;
+        productSelect.appendChild(opt);
+      });
+    });
+  });
+
+  document.getElementById("product").addEventListener("change", function () {
+    const client = document.getElementById("client").value;
+    const solution = document.getElementById("solution").value;
+    const product = this.value;
+    fetch("/get_environments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, solution, product })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const envSelect = document.querySelector("select[name='ambiente']");
+      envSelect.innerHTML = "<option value=''>Seleccione...</option>";
+      data.forEach(env => {
+        const opt = document.createElement("option");
+        opt.value = env;
+        opt.text = env;
+        envSelect.appendChild(opt);
+      });
+    });
+  });
+</script>
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-gray-800 p-6 rounded w-96 space-y-4">
+    <h3 class="text-lg font-semibold text-cyan-300">Editar Despliegue</h3>
+    <input type="hidden" id="modalFeature">
+    <input type="hidden" id="modalEnv">
+    <div>
+      <label>Estado</label>
+      <select id="modalEstado" class="w-full bg-gray-700 p-2 rounded">
+        <option value="Valid">Valid</option>
+        <option value="Failed">Failed</option>
+      </select>
+    </div>
+    <div>
+      <label>Fecha</label>
+      <input type="date" id="modalFecha" class="w-full bg-gray-700 p-2 rounded">
+    </div>
+    <div>
+      <label>Release Manager</label>
+      <select id="modalRM" class="w-full bg-gray-700 p-2 rounded">
+        {% for rm in rm_options %}
+          <option value="{{ rm }}">{{ rm }}</option>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Modal -->
-  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
-    <div class="bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-md">
-      <h3 id="modal-title" class="text-xl text-cyan-400 font-semibold mb-4">✏️ Editar Despliegue</h3>
-      <form id="editDeploymentForm" class="space-y-4">
-        <input type="hidden" id="modal-feature">
-        <input type="hidden" id="modal-env">
-
-        <div>
-          <label class="block font-semibold mb-1">Estado</label>
-          <select id="modal-estado" required
-                  class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            {% for status in estado_options %}
-            <option value="{{ status }}">{{ status }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-semibold mb-1">Fecha</label>
-          <input type="date" id="modal-fecha" required
-                 class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-        </div>
-
-        <div>
-          <label class="block font-semibold mb-1">Release Manager</label>
-          <select id="modal-rm" required
-                  class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            {% for rm in rm_options %}
-            <option value="{{ rm }}">{{ rm }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="text-right space-x-2 mt-4">
-          <button type="submit"
-                  class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-4 py-2 rounded">
-            Guardar
-          </button>
-          <button type="button" onclick="closeModal()"
-                  class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded">
-            Cancelar
-          </button>
-        </div>
-      </form>
+      </select>
+    </div>
+    <div class="text-right">
+      <button id="saveModal" class="bg-cyan-500 px-4 py-1 rounded hover:bg-cyan-600">Guardar</button>
+      <button onclick="document.getElementById('editModal').classList.add('hidden')" class="ml-2 text-sm text-gray-400">Cancelar</button>
     </div>
   </div>
-
-</div> <!-- end .page-container -->
+</div>
 
 <script>
-function closeModal() {
-  document.getElementById("editModal").classList.add("hidden");
-}
+  document.querySelectorAll(".edit-env-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const feature = this.dataset.feature;
+      const ambiente = this.dataset.env;
+      const client = document.getElementById("client").value;
+      const solution = document.getElementById("solution").value;
+      const product = document.getElementById("product").value;
 
-function exportFilteredCSV() {
-  const table = document.getElementById("filteredTable");
-  if (!table) return;
-
-  const rows = Array.from(table.querySelectorAll("tr"));
-  const csv = rows.map(row => {
-    const cells = Array.from(row.querySelectorAll("th,td"));
-    return cells.map(cell => '"' + cell.innerText.trim() + '"').join(",");
-  }).join("\\n");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "filtered_deployments.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.edit-env-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      const cell = button.closest('.env-cell');
-      const row = cell.closest('tr');
-      const feature = row.dataset.feature;
-      const ambiente = cell.dataset.env;
-
-      fetch('/get_deployment_details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feature, ambiente })
+      fetch("/get_deployment_details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client, solution, product, feature, ambiente })
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("modal-feature").value = feature;
-        document.getElementById("modal-env").value = ambiente;
-        document.getElementById("modal-estado").value = data.estado || "";
-        document.getElementById("modal-fecha").value = data.fecha || "";
-        document.getElementById("modal-rm").value = data.release_manager || "";
-
-        const isNew = !(data.estado || data.fecha || data.release_manager);
-        document.getElementById("modal-title").innerText = isNew
-          ? "➕ Nuevo Despliegue"
-          : "✏️ Editar Despliegue";
-
+        document.getElementById("modalFeature").value = feature;
+        document.getElementById("modalEnv").value = ambiente;
+        document.getElementById("modalEstado").value = data.estado || "Valid";
+        document.getElementById("modalFecha").value = data.fecha || "{{ today }}";
+        document.getElementById("modalRM").value = data.release_manager || "";
         document.getElementById("editModal").classList.remove("hidden");
       });
     });
   });
 
-  document.getElementById("editDeploymentForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    const feature = document.getElementById("modal-feature").value;
-    const ambiente = document.getElementById("modal-env").value;
-    const estado = document.getElementById("modal-estado").value;
-    const fecha = document.getElementById("modal-fecha").value;
-    const release_manager = document.getElementById("modal-rm").value;
+  document.getElementById("saveModal").addEventListener("click", function () {
+    const client = document.getElementById("client").value;
+    const solution = document.getElementById("solution").value;
+    const product = document.getElementById("product").value;
+    const feature = document.getElementById("modalFeature").value;
+    const ambiente = document.getElementById("modalEnv").value;
+    const estado = document.getElementById("modalEstado").value;
+    const fecha = document.getElementById("modalFecha").value;
+    const release_manager = document.getElementById("modalRM").value;
 
-    fetch('/update_full_deployment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ feature, ambiente, estado, fecha, release_manager })
+    fetch("/update_full_deployment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, solution, product, feature, ambiente, estado, fecha, release_manager })
     })
     .then(res => res.json())
-    .then(result => {
-      if (result.success) {
-        closeModal();
-        location.reload();
-      } else {
-        alert("Error al guardar.");
-      }
+    .then(data => {
+      if (data.success) window.location.reload();
     });
   });
-});
 </script>
 </body>
 </html>
