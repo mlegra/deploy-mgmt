@@ -49,9 +49,6 @@ def create_db():
             product_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             repositorio TEXT,
-            type TEXT,
-            application TEXT,
-            tenancy TEXT,
             master TEXT,
             UNIQUE(product_id, name, repositorio),
             FOREIGN KEY(product_id) REFERENCES products(id)
@@ -75,14 +72,11 @@ def create_db():
     conn.commit()
     conn.close()
 
-
 def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
 
-
-# --- Client / Solution / Product ---
 def get_or_create_client(name):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -111,10 +105,9 @@ def get_or_create_solution(client_id, name):
     cur.execute("SELECT id FROM solutions WHERE client_id = ? AND name = ?", (client_id, name))
     row = cur.fetchone()
     if row:
-        solution_id = row["id"]
-    else:
-        cur.execute("INSERT INTO solutions (client_id, name) VALUES (?, ?)", (client_id, name))
-        solution_id = cur.lastrowid
+        return row["id"]
+    cur.execute("INSERT INTO solutions (client_id, name) VALUES (?, ?)", (client_id, name))
+    solution_id = cur.lastrowid
     conn.commit()
     conn.close()
     return solution_id
@@ -133,10 +126,9 @@ def get_or_create_product(solution_id, name):
     cur.execute("SELECT id FROM products WHERE solution_id = ? AND name = ?", (solution_id, name))
     row = cur.fetchone()
     if row:
-        product_id = row["id"]
-    else:
-        cur.execute("INSERT INTO products (solution_id, name) VALUES (?, ?)", (solution_id, name))
-        product_id = cur.lastrowid
+        return row["id"]
+    cur.execute("INSERT INTO products (solution_id, name) VALUES (?, ?)", (solution_id, name))
+    product_id = cur.lastrowid
     conn.commit()
     conn.close()
     return product_id
@@ -149,8 +141,6 @@ def get_products_by_solution(solution_id):
     conn.close()
     return rows
 
-
-# --- Environment / Feature / Deployment ---
 def get_environments_by_product(product_id):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -165,10 +155,9 @@ def get_or_create_environment(product_id, name):
     cur.execute("SELECT id FROM environments WHERE product_id = ? AND name = ?", (product_id, name))
     row = cur.fetchone()
     if row:
-        env_id = row["id"]
-    else:
-        cur.execute("INSERT INTO environments (product_id, name) VALUES (?, ?)", (product_id, name))
-        env_id = cur.lastrowid
+        return row["id"]
+    cur.execute("INSERT INTO environments (product_id, name) VALUES (?, ?)", (product_id, name))
+    env_id = cur.lastrowid
     conn.commit()
     conn.close()
     return env_id
@@ -184,10 +173,9 @@ def add_or_get_feature(product_id, data):
         feature_id = row["id"]
     else:
         cur.execute('''
-            INSERT INTO features (product_id, name, repositorio, type, application, tenancy, master)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (product_id, data["name"], data["repositorio"], data["type"],
-              data["application"], data["tenancy"], data["master"]))
+            INSERT INTO features (product_id, name, repositorio, master)
+            VALUES (?, ?, ?, ?)
+        ''', (product_id, data["name"], data["repositorio"], data["master"]))
         feature_id = cur.lastrowid
     conn.commit()
     conn.close()
@@ -229,7 +217,7 @@ def get_all_deployments_by_product(product_id):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''
-        SELECT f.id as feature_id, f.name as feature_name, f.repositorio, f.type, f.application, f.master,
+        SELECT f.id as feature_id, f.name as feature_name, f.repositorio, f.master,
                e.name as ambiente, d.estado, d.fecha, d.release_manager
         FROM features f
         LEFT JOIN deployments d ON f.id = d.feature_id
@@ -246,8 +234,6 @@ def get_all_deployments_by_product(product_id):
         if name not in grouped:
             grouped[name] = {
                 "repositorio": row["repositorio"],
-                "type": row["type"],
-                "application": row["application"],
                 "master": row["master"],
                 "env_status": {}
             }
@@ -255,8 +241,6 @@ def get_all_deployments_by_product(product_id):
             grouped[name]["env_status"][row["ambiente"]] = row["estado"]
     return grouped
 
-
-# Helper
 def get_product_id_by_feature(feature_id):
     conn = get_db_connection()
     cur = conn.cursor()
