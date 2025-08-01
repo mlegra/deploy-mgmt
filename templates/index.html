@@ -139,11 +139,7 @@
             <td class="border px-2 py-1">{{ data.repositorio }}</td>
             <td class="border px-2 py-1">{{ data.master }}</td>
             {% for env in ambiente_options %}
-              <td class="border px-2 py-1 text-center">
-                {% if data.env_status[env] %}
-                  {% if data.env_status[env] == 'Valid' %}✅{% else %}❌{% endif %}
-                {% else %}-{% endif %}
-              </td>
+              $1 ✏️ <button class="edit-env-btn text-xs underline" data-feature="{{ name }}" data-env="{{ env }}">✏️</button> $2
             {% endfor %}
           </tr>
           {% endfor %}
@@ -218,5 +214,84 @@
     });
   });
 </script>
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-gray-800 p-6 rounded w-96 space-y-4">
+    <h3 class="text-lg font-semibold text-cyan-300">Editar Despliegue</h3>
+    <input type="hidden" id="modalFeature">
+    <input type="hidden" id="modalEnv">
+    <div>
+      <label>Estado</label>
+      <select id="modalEstado" class="w-full bg-gray-700 p-2 rounded">
+        <option value="Valid">Valid</option>
+        <option value="Failed">Failed</option>
+      </select>
+    </div>
+    <div>
+      <label>Fecha</label>
+      <input type="date" id="modalFecha" class="w-full bg-gray-700 p-2 rounded">
+    </div>
+    <div>
+      <label>Release Manager</label>
+      <select id="modalRM" class="w-full bg-gray-700 p-2 rounded">
+        {% for rm in rm_options %}
+          <option value="{{ rm }}">{{ rm }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="text-right">
+      <button id="saveModal" class="bg-cyan-500 px-4 py-1 rounded hover:bg-cyan-600">Guardar</button>
+      <button onclick="document.getElementById('editModal').classList.add('hidden')" class="ml-2 text-sm text-gray-400">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll(".edit-env-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const feature = this.dataset.feature;
+      const ambiente = this.dataset.env;
+      const client = document.getElementById("client").value;
+      const solution = document.getElementById("solution").value;
+      const product = document.getElementById("product").value;
+
+      fetch("/get_deployment_details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client, solution, product, feature, ambiente })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("modalFeature").value = feature;
+        document.getElementById("modalEnv").value = ambiente;
+        document.getElementById("modalEstado").value = data.estado || "Valid";
+        document.getElementById("modalFecha").value = data.fecha || "{{ today }}";
+        document.getElementById("modalRM").value = data.release_manager || "";
+        document.getElementById("editModal").classList.remove("hidden");
+      });
+    });
+  });
+
+  document.getElementById("saveModal").addEventListener("click", function () {
+    const client = document.getElementById("client").value;
+    const solution = document.getElementById("solution").value;
+    const product = document.getElementById("product").value;
+    const feature = document.getElementById("modalFeature").value;
+    const ambiente = document.getElementById("modalEnv").value;
+    const estado = document.getElementById("modalEstado").value;
+    const fecha = document.getElementById("modalFecha").value;
+    const release_manager = document.getElementById("modalRM").value;
+
+    fetch("/update_full_deployment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, solution, product, feature, ambiente, estado, fecha, release_manager })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) window.location.reload();
+    });
+  });
+</script>
 </body>
 </html>
+
