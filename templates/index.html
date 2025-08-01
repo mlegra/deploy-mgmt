@@ -126,5 +126,69 @@
       <p class="text-gray-400">No hay despliegues disponibles.</p>
     {% endif %}
   </div>
+<script>
+  document.getElementById("client").addEventListener("change", function () {
+    const client = this.value;
+    fetch("/get_solutions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const solutionSelect = document.getElementById("solution");
+      solutionSelect.innerHTML = "<option value=''>Seleccione...</option>";
+      data.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.text = s.name;
+        solutionSelect.appendChild(opt);
+      });
+    });
+  });
+
+  document.getElementById("solution").addEventListener("change", function () {
+    const client = document.getElementById("client").value;
+    const solution = this.value;
+    fetch("/get_products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, solution })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const productSelect = document.getElementById("product");
+      productSelect.innerHTML = "<option value=''>Seleccione...</option>";
+      data.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.name;
+        opt.text = p.name;
+        productSelect.appendChild(opt);
+      });
+    });
+  });
+
+  document.getElementById("product").addEventListener("change", function () {
+    const client = document.getElementById("client").value;
+    const solution = document.getElementById("solution").value;
+    const product = this.value;
+    fetch("/get_environments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, solution, product })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const envSelect = document.querySelector("select[name='ambiente']");
+      envSelect.innerHTML = "<option value=''>Seleccione...</option>";
+      data.forEach(env => {
+        const opt = document.createElement("option");
+        opt.value = env;
+        opt.text = env;
+        envSelect.appendChild(opt);
+      });
+    });
+  });
+</script>
 </body>
 </html>
