@@ -3,7 +3,7 @@ import sqlite3
 DB_NAME = "deployments.db"
 
 def create_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME, timeout=5)
     c = conn.cursor()
 
     c.execute('''
@@ -73,7 +73,7 @@ def create_db():
     conn.close()
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME, timeout=5)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -163,6 +163,8 @@ def get_or_create_environment(product_id, name):
     return env_id
 
 def add_or_get_feature(product_id, data):
+    if not product_id:
+        raise ValueError("product_id es requerido para agregar un feature")
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''
@@ -190,10 +192,12 @@ def get_features_by_product(product_id):
     return rows
 
 def save_deployment(feature_id, data):
+    product_id = get_product_id_by_feature(feature_id)
+    if not product_id:
+        raise ValueError("No se encontró el product_id para el feature_id dado")
+    env_id = get_or_create_environment(product_id, data["ambiente"])
     conn = get_db_connection()
     cur = conn.cursor()
-    product_id = get_product_id_by_feature(feature_id)
-    env_id = get_or_create_environment(product_id, data["ambiente"])
     cur.execute('''
         INSERT OR REPLACE INTO deployments (feature_id, environment_id, estado, fecha, release_manager)
         VALUES (?, ?, ?, ?, ?)
@@ -202,10 +206,10 @@ def save_deployment(feature_id, data):
     conn.close()
 
 def update_full_deployment(feature_id, ambiente, estado, fecha, release_manager):
-    conn = get_db_connection()
-    cur = conn.cursor()
     product_id = get_product_id_by_feature(feature_id)
     env_id = get_or_create_environment(product_id, ambiente)
+    conn = get_db_connection()
+    cur = conn.cursor()
     cur.execute('''
         INSERT OR REPLACE INTO deployments (feature_id, environment_id, estado, fecha, release_manager)
         VALUES (?, ?, ?, ?, ?)
