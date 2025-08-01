@@ -1,5 +1,7 @@
+import random
 from model import (
     create_db,
+    get_db_connection,
     get_or_create_client,
     get_or_create_solution,
     get_or_create_product,
@@ -8,51 +10,67 @@ from model import (
     save_deployment
 )
 
-# 1. Inicializar base
+# 🔁 Reset DB: drop all tables
+def reset_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.executescript("""
+        DROP TABLE IF EXISTS deployments;
+        DROP TABLE IF EXISTS environments;
+        DROP TABLE IF EXISTS features;
+        DROP TABLE IF EXISTS products;
+        DROP TABLE IF EXISTS solutions;
+        DROP TABLE IF EXISTS clients;
+    """)
+    conn.commit()
+    conn.close()
+
+# ▶️ Ejecutar reinicio y creación
+reset_db()
 create_db()
 
-# 2. Datos jerárquicos
-client_name = "Cliente ACME"
-solution_name = "Gestión de Pedidos"
-product_name = "Portal Web"
-ambientes = ["DEV", "QA", "PROD"]
-features = [
-    {"name": "Login OAuth", "type": "feature"},
-    {"name": "Checkout", "type": "feature"},
-    {"name": "Notificaciones", "type": "bugfix"}
-]
+# 📦 Datos dummy
+clientes = {
+    "Cliente ACME": ["Facturación", "Logística"],
+    "TechSoft": ["Portal Clientes", "Monitoreo"]
+}
+
+ambientes = ["DEV", "UAT", "PPD", "PRD"]
 repositorio = "Repo1"
-release_manager = "Michel LF"
-application = "PedidoApp"
+release_manager = "Elizabet RC"
+app = "AppX"
 script = "deploy.sql"
 
-# 3. Crear jerarquía
-client_id = get_or_create_client(client_name)
-solution_id = get_or_create_solution(client_id, solution_name)
-product_id = get_or_create_product(solution_id, product_name)
+# 🧠 Generar jerarquía y datos
+for cliente, soluciones in clientes.items():
+    client_id = get_or_create_client(cliente)
+    for solucion in soluciones:
+        solution_id = get_or_create_solution(client_id, solucion)
+        for i in range(random.randint(1, 3)):
+            prod_name = f"{solucion}-Prod{i+1}"
+            product_id = get_or_create_product(solution_id, prod_name)
 
-# 4. Crear ambientes
-for env in ambientes:
-    get_or_create_environment(product_id, env)
+            for env in ambientes:
+                get_or_create_environment(product_id, env)
 
-# 5. Insertar features y despliegues
-for feature in features:
-    f_data = {
-        "name": feature["name"],
-        "repositorio": repositorio,
-        "type": feature["type"],
-        "application": application,
-        "tenancy": client_name,
-        "master": script
-    }
-    f_id = add_or_get_feature(product_id, f_data)
+            # Agregar una feature
+            feat_name = f"{solucion}-Feature{i+1}"
+            feat_data = {
+                "name": feat_name,
+                "repositorio": repositorio,
+                "type": "feature",
+                "application": app,
+                "tenancy": cliente,
+                "master": script
+            }
+            feat_id = add_or_get_feature(product_id, feat_data)
 
-    for env in ambientes:
-        save_deployment(f_id, {
-            "ambiente": env,
-            "estado": "Valid",
-            "fecha": "2025-08-01",
-            "release_manager": release_manager
-        })
+            for env in ambientes:
+                save_deployment(feat_id, {
+                    "ambiente": env,
+                    "estado": random.choice(["Valid", "Failed"]),
+                    "fecha": "2025-08-01",
+                    "release_manager": release_manager
+                })
 
-print("✅ Datos de prueba insertados correctamente.")
+print("✅ Datos dummy generados con éxito.")
