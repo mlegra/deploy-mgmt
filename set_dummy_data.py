@@ -1,4 +1,5 @@
 import random
+from datetime import date
 from model import (
     create_db,
     get_db_connection,
@@ -10,7 +11,7 @@ from model import (
     save_deployment
 )
 
-# 🔁 Reset DB: drop all tables
+# Reinicia base eliminando todas las tablas
 def reset_db():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -25,43 +26,38 @@ def reset_db():
     conn.commit()
     conn.close()
 
-# ▶️ Ejecutar reinicio y creación
+# Inicializar base
 reset_db()
 create_db()
 
-# 📦 Datos dummy
+# Datos base
 clientes = {
-    "Cliente ACME": ["Facturación", "Logística"],
-    "TechSoft": ["Portal Clientes", "Monitoreo"]
+    "Cliente ACME": ["Facturacion", "Logistica"],
+    "TechSoft": ["PortalClientes", "Monitoreo"]
 }
-
 ambientes = ["DEV", "UAT", "PPD", "PRD"]
 repositorio = "Repo1"
 release_manager = "Elizabet RC"
-app = "AppX"
-script = "deploy.sql"
+hoy = date.today().isoformat()
 
-# 🧠 Generar jerarquía y datos
+# Generar jerarquía y features
 for cliente, soluciones in clientes.items():
     client_id = get_or_create_client(cliente)
     for solucion in soluciones:
         solution_id = get_or_create_solution(client_id, solucion)
         for i in range(random.randint(1, 3)):
-            prod_name = f"{solucion}-Prod{i+1}"
-            product_id = get_or_create_product(solution_id, prod_name)
+            producto = f"{solucion}-Prod{i+1}"
+            product_id = get_or_create_product(solution_id, producto)
 
+            # Ambientes
             for env in ambientes:
                 get_or_create_environment(product_id, env)
 
-            # Agregar una feature
-            feat_name = f"{solucion}-Feature{i+1}"
+            # Feature única
             feat_data = {
-                "name": feat_name,
+                "name": f"{solucion}-Feature{i+1}",
                 "repositorio": repositorio,
-                "type": "feature",
-                "application": app,
-                "tenancy": cliente,
-                "master": script
+                "master": "deploy.sql"
             }
             feat_id = add_or_get_feature(product_id, feat_data)
 
@@ -69,8 +65,8 @@ for cliente, soluciones in clientes.items():
                 save_deployment(feat_id, {
                     "ambiente": env,
                     "estado": random.choice(["Valid", "Failed"]),
-                    "fecha": "2025-08-01",
+                    "fecha": hoy,
                     "release_manager": release_manager
                 })
 
-print("✅ Datos dummy generados con éxito.")
+print("✅ Base reiniciada y datos dummy cargados.")
