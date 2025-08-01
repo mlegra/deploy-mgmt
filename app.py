@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from datetime import date
 from model import (
-    create_db,
-    get_or_create_client, get_all_clients,
+    create_db, get_or_create_client, get_all_clients,
     get_or_create_solution, get_solutions_by_client,
     get_or_create_product, get_products_by_solution,
     add_or_get_feature, get_features_by_product,
@@ -30,27 +29,28 @@ def index():
 
     solutions = get_solutions_by_client(selected_client_id) if selected_client_id else []
     products = get_products_by_solution(selected_solution_id) if selected_solution_id else []
-    features = get_features_by_product(selected_product_id) if selected_product_id else []
-    deployments = get_all_deployments_by_product(selected_product_id) if selected_product_id else []
     ambiente_options = get_environments_by_product(selected_product_id) if selected_product_id else []
+    deployments = get_all_deployments_by_product(selected_product_id) if selected_product_id else {}
 
-    if request.method == "POST":
+    if request.method == "POST" and selected_product_id:
         form = request.form
 
         feature_data = {
-            "name": form["name"],
-            "repositorio": form["repositorio"],
-            "master": form["master"]
+            "name": form.get("name"),
+            "repositorio": form.get("repositorio"),
+            "master": form.get("master")
         }
-        feature_id = add_or_get_feature(selected_product_id, feature_data)
-
-        deployment_data = {
-            "ambiente": form["ambiente"],
-            "estado": form["estado"],
-            "fecha": form["fecha"],
-            "release_manager": form["release_manager"]
-        }
-        save_deployment(feature_id, deployment_data)
+        try:
+            feature_id = add_or_get_feature(selected_product_id, feature_data)
+            deployment_data = {
+                "ambiente": form.get("ambiente"),
+                "estado": form.get("estado"),
+                "fecha": form.get("fecha"),
+                "release_manager": form.get("release_manager")
+            }
+            save_deployment(feature_id, deployment_data)
+        except Exception as e:
+            return f"Error al guardar el despliegue: {e}", 500
 
         return redirect(url_for("index", client=client_name, solution=solution_name, product=product_name))
 
@@ -61,55 +61,33 @@ def index():
         selected_solution=solution_name,
         products=products,
         selected_product=product_name,
-        features=features,
-        deployments=deployments,
         ambiente_options=ambiente_options,
         repos_options=repos_options,
         rm_options=rm_options,
+        deployments=deployments,
         today=today
     )
 
 @app.route("/get_solutions", methods=["POST"])
 def get_solutions():
     data = request.get_json()
-    client_name = data.get("client")
-    client_id = get_or_create_client(client_name)
-    solutions = get_solutions_by_client(client_id)
-    return jsonify([{"name": s["name"]} for s in solutions])
+    client_id = get_or_create_client(data.get("client"))
+    return jsonify([{"name": s["name"]} for s in get_solutions_by_client(client_id)])
 
 @app.route("/get_products", methods=["POST"])
 def get_products():
     data = request.get_json()
-    client_name = data.get("client")
-    solution_name = data.get("solution")
-    client_id = get_or_create_client(client_name)
-    solution_id = get_or_create_solution(client_id, solution_name)
-    products = get_products_by_solution(solution_id)
-    return jsonify([{"name": p["name"]} for p in products])
-
-@app.route("/get_features", methods=["POST"])
-def get_features():
-    data = request.get_json()
-    client_name = data.get("client")
-    solution_name = data.get("solution")
-    product_name = data.get("product")
-    client_id = get_or_create_client(client_name)
-    solution_id = get_or_create_solution(client_id, solution_name)
-    product_id = get_or_create_product(solution_id, product_name)
-    features = get_features_by_product(product_id)
-    return jsonify([{"name": f["name"]} for f in features])
+    client_id = get_or_create_client(data.get("client"))
+    solution_id = get_or_create_solution(client_id, data.get("solution"))
+    return jsonify([{"name": p["name"]} for p in get_products_by_solution(solution_id)])
 
 @app.route("/get_environments", methods=["POST"])
 def get_environments():
     data = request.get_json()
-    client_name = data.get("client")
-    solution_name = data.get("solution")
-    product_name = data.get("product")
-    client_id = get_or_create_client(client_name)
-    solution_id = get_or_create_solution(client_id, solution_name)
-    product_id = get_or_create_product(solution_id, product_name)
-    ambientes = get_environments_by_product(product_id)
-    return jsonify(ambientes)
+    client_id = get_or_create_client(data.get("client"))
+    solution_id = get_or_create_solution(client_id, data.get("solution"))
+    product_id = get_or_create_product(solution_id, data.get("product"))
+    return jsonify(get_environments_by_product(product_id))
 
 @app.route("/update_full_deployment", methods=["POST"])
 def update_deployment():
