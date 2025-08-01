@@ -31,6 +31,7 @@ def index():
     products = get_products_by_solution(selected_solution_id) if selected_solution_id else []
     ambiente_options = get_environments_by_product(selected_product_id) if selected_product_id else []
     deployments = get_all_deployments_by_product(selected_product_id) if selected_product_id else {}
+    grouped_deployments = deployments
 
     if request.method == "POST" and client_name and solution_name and product_name and selected_product_id:
         form = request.form
@@ -60,7 +61,8 @@ def index():
         deployments=deployments,
         repos_options=repos_options,
         rm_options=rm_options,
-        today=today
+        today=today,
+        grouped_deployments=grouped_deployments
     )
 
 @app.route("/get_solutions", methods=["POST"])
