@@ -17,6 +17,7 @@
 
     <!-- 📋 Nuevo despliegue -->
     <form method="POST" action="/" class="bg-gray-900 p-6 rounded mb-10 space-y-4">
+      <!-- Select Cliente / Solucion -->
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Cliente</label>
@@ -38,6 +39,7 @@
         </div>
       </div>
 
+      <!-- Select Producto / Ambiente -->
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Producto</label>
@@ -51,6 +53,7 @@
         <div>
           <label class="block font-semibold mb-1">Ambiente</label>
           <select id="ambiente" name="ambiente" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+            <option value="">Seleccione...</option>
             {% for a in ambiente_options %}
             <option value="{{ a }}">{{ a }}</option>
             {% endfor %}
@@ -58,6 +61,7 @@
         </div>
       </div>
 
+      <!-- Resto del formulario -->
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Feature</label>
@@ -89,9 +93,7 @@
           <label class="block font-semibold mb-1">Aplicación</label>
           <input type="text" name="application" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
         </div>
-        <div>
-          <!-- Tenancy eliminado -->
-        </div>
+        <div></div>
       </div>
 
       <div class="grid md:grid-cols-2 gap-4">
@@ -163,6 +165,30 @@
           opt.value = p.name;
           opt.text = p.name;
           productSelect.appendChild(opt);
+        });
+        // Cargar ambientes al cambiar producto
+        productSelect.dispatchEvent(new Event("change"));
+      });
+    });
+
+    document.getElementById("product").addEventListener("change", function () {
+      const client = document.getElementById("client").value;
+      const solution = document.getElementById("solution").value;
+      const product = this.value;
+      fetch("/get_environments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client, solution, product })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const envSelect = document.getElementById("ambiente");
+        envSelect.innerHTML = "<option value=''>Seleccione...</option>";
+        data.forEach(env => {
+          const opt = document.createElement("option");
+          opt.value = env;
+          opt.text = env;
+          envSelect.appendChild(opt);
         });
       });
     });
