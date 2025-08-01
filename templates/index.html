@@ -128,18 +128,16 @@
             <th class="border px-2 py-1">Repositorio</th>
             <th class="border px-2 py-1">Script</th>
             {% for env in ambiente_options %}
-              <th class="border px-2 py-1">{{ env }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for name, data in deployments.items() %}
-          <tr class="bg-gray-800 hover:bg-gray-700">
-            <td class="border px-2 py-1">{{ name }}</td>
-            <td class="border px-2 py-1">{{ data.repositorio }}</td>
-            <td class="border px-2 py-1">{{ data.master }}</td>
-            {% for env in ambiente_options %}
-              $1 ✏️ <button class="edit-env-btn text-xs underline" data-feature="{{ name }}" data-env="{{ env }}">✏️</button> $2
+  <td class="border px-2 py-1 text-center">
+    {% if data.env_status[env] %}
+      {{ '✅' if data.env_status[env] == 'Valid' else '❌' }}
+      <button class="edit-env-btn text-xs underline" data-feature="{{ name }}" data-env="{{ env }}">✏️</button>
+    {% else %}
+      -
+      <button class="edit-env-btn text-xs underline" data-feature="{{ name }}" data-env="{{ env }}">➕</button>
+    {% endif %}
+  </td>
+{% endfor %}
             {% endfor %}
           </tr>
           {% endfor %}
