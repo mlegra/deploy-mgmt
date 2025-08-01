@@ -192,6 +192,14 @@
         });
       });
     });
+
+    // 🔄 Forzar carga de ambientes si ya hay producto precargado
+    window.addEventListener("DOMContentLoaded", () => {
+      const productSelect = document.getElementById("product");
+      if (productSelect.value) {
+        productSelect.dispatchEvent(new Event("change"));
+      }
+    });
   </script>
 </body>
 </html>
