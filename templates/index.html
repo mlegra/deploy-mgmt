@@ -4,12 +4,75 @@
   <meta charset="UTF-8">
   <title>DevOps Deployments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">function closeModal() {
+  document.getElementById("editModal").classList.add("hidden");
+}
+
+document.querySelectorAll(".edit-env-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    const feature = button.dataset.feature;
+    const ambiente = button.dataset.env;
+
+    fetch("/get_deployment_details", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feature, ambiente })
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("modal-feature").value = feature;
+      document.getElementById("modal-env").value = ambiente;
+      document.getElementById("modal-estado").value = data.estado || "";
+      document.getElementById("modal-fecha").value = data.fecha || "";
+      document.getElementById("modal-rm").value = data.release_manager || "";
+
+      document.getElementById("modal-title").innerText = (data.estado || data.fecha || data.release_manager) ? "✏️ Editar Despliegue" : "➕ Nuevo Despliegue";
+      document.getElementById("editModal").classList.remove("hidden");
+    });
+  });
+});
+
+document.getElementById("editDeploymentForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const feature = document.getElementById("modal-feature").value;
+  const ambiente = document.getElementById("modal-env").value;
+  const estado = document.getElementById("modal-estado").value;
+  const fecha = document.getElementById("modal-fecha").value;
+  const release_manager = document.getElementById("modal-rm").value;
+
+  fetch("/update_full_deployment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client: document.querySelector("select[name='client']").value,
+      solution: document.querySelector("select[name='solution']").value,
+      product: document.querySelector("select[name='product']").value,
+      feature,
+      ambiente,
+      estado,
+      fecha,
+      release_manager
+    })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      closeModal();
+      location.reload();
+    } else {
+      alert("Error al guardar.");
+    }
+  });
+});
+</script>
 </head>
 <body class="bg-black text-white px-4 py-6">
   <div class="max-w-6xl mx-auto">
     <h1 class="text-3xl font-bold text-cyan-400 mb-6">📋 Registrar Despliegue</h1>
-    <form method="POST" action="/" class="bg-gray-900 p-6 rounded-lg space-y-4 mb-10">
+    
+      <input type="hidden" name="client" value="{{ selected_client }}">
+      <input type="hidden" name="solution" value="{{ selected_solution }}">
+      <input type="hidden" name="product" value="{{ selected_product }}">
       <div class="grid md:grid-cols-2 gap-4">
         <div>
           <label class="block font-semibold mb-1">Cliente</label>
@@ -112,10 +175,7 @@
             <td class="px-3 py-2 border border-gray-700">{{ data.master }}</td>
             {% for env in ambiente_options %}
             <td class="px-3 py-2 border border-gray-700 text-center">
-              {% if data.env_status[env] %}
-                {% if data.env_status[env] == "Valid" %}✅{% else %}❌{% endif %}
-              {% else %}-{% endif %}
-            </td>
+               <button class="edit-env-btn" data-feature="{{ name }}" data-env="{{ env }}">✏️</button></td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -126,6 +186,45 @@
       <p class="text-gray-400">No hay despliegues disponibles.</p>
     {% endif %}
   </div>
+
+<!-- Modal edición -->
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+  <div class="bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-md">
+    <h3 id="modal-title" class="text-xl text-cyan-400 font-semibold mb-4">✏️ Editar Despliegue</h3>
+    <form id="editDeploymentForm" class="space-y-4">
+      <input type="hidden" id="modal-feature">
+      <input type="hidden" id="modal-env">
+
+      <div>
+        <label class="block font-semibold mb-1">Estado</label>
+        <select id="modal-estado" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+          <option value="Valid">Valid</option>
+          <option value="Failed">Failed</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Fecha</label>
+        <input type="date" id="modal-fecha" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Release Manager</label>
+        <select id="modal-rm" required class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+          {% for rm in rm_options %}
+            <option value="{{ rm }}">{{ rm }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="text-right space-x-2 mt-4">
+        <button type="submit" class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-4 py-2 rounded">Guardar</button>
+        <button type="button" onclick="closeModal()" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   document.getElementById("client").addEventListener("change", function () {
     const client = this.value;
