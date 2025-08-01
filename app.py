@@ -19,9 +19,9 @@ today = date.today().isoformat()
 @app.route("/", methods=["GET", "POST"])
 def index():
     clients = get_all_clients()
-    client_name = request.args.get("client") or request.form.get("client")
-    solution_name = request.args.get("solution") or request.form.get("solution")
-    product_name = request.args.get("product") or request.form.get("product")
+    client_name = request.values.get("client")
+    solution_name = request.values.get("solution")
+    product_name = request.values.get("product")
 
     selected_client_id = get_or_create_client(client_name) if client_name else None
     selected_solution_id = get_or_create_solution(selected_client_id, solution_name) if selected_client_id and solution_name else None
@@ -32,7 +32,7 @@ def index():
     ambiente_options = get_environments_by_product(selected_product_id) if selected_product_id else []
     deployments = get_all_deployments_by_product(selected_product_id) if selected_product_id else {}
 
-    if request.method == "POST" and selected_product_id:
+    if request.method == "POST" and client_name and solution_name and product_name and selected_product_id:
         form = request.form
 
         feature_data = {
