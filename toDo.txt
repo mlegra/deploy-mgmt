@@ -1,0 +1,2 @@
+this is to:
+Add ... to the deployments table on each row to allow: delete a deployment, modify a deployment, see deeper details
