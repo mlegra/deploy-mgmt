@@ -7,7 +7,7 @@ from utils import calculate_kpis
 from model import (
     create_db, add_or_get_feature, save_deployment,
     get_all_features, get_all_feature_names, update_env_status,
-    update_full_deployment, get_all_deployment_details
+    update_full_deployment, get_all_deployment_details, get_db_connection
 )
 
 app = Flask(__name__)
@@ -21,6 +21,27 @@ repos_options = ["Repo1", "Repo2"]
 rm_options = ["Michel LF", "Elizabet RC", "Yasser F"]
 app_options = ["INSIS", "Premium"]
 tenancy_options = ["Uruguay", "Panama"]
+
+@app.route('/api/tenants')
+def api_tenants():
+    conn = get_db_connection()
+    rows = conn.execute('SELECT id, name FROM tenants ORDER BY name').fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/api/solutions/<int:tenant_id>')
+def api_solutions(tenant_id):
+    conn = get_db_connection()
+    rows = conn.execute('SELECT id, name FROM solutions WHERE tenant_id = ? ORDER BY name', (tenant_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/api/products/<int:solution_id>')
+def api_products(solution_id):
+    conn = get_db_connection()
+    rows = conn.execute('SELECT id, name FROM products WHERE solution_id = ? ORDER BY name', (solution_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
 
 @app.route("/", methods=["GET", "POST"])
 def index():

@@ -5,6 +5,42 @@ DB_NAME = "deployments.db"
 def create_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS tenants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS solutions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id INTEGER,
+            name TEXT NOT NULL,
+            FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            solution_id INTEGER,
+            name TEXT NOT NULL,
+            FOREIGN KEY (solution_id) REFERENCES solutions(id)
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS features_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            repositorio TEXT,
+            master TEXT,
+            UNIQUE(name, repositorio),
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        )
+    ''')
+
     c.execute('''
         CREATE TABLE IF NOT EXISTS features (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +65,42 @@ def create_db():
             FOREIGN KEY(feature_id) REFERENCES features(id)
         )
     ''')
+    conn.commit()
+    conn.close()
+    
+def migrate_features_to_normalized():
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    c.execute('SELECT * FROM features')
+    old_rows = c.fetchall()
+
+    for row in old_rows:
+        tenancy = row['tenancy']
+        application = row['application']
+        tipo = row['type']
+
+        # Tenant
+        c.execute('SELECT id FROM tenants WHERE name = ?', (tenancy,))
+        tenant = c.fetchone()
+        tenant_id = tenant['id'] if tenant else c.execute('INSERT INTO tenants (name) VALUES (?)', (tenancy,)).lastrowid
+
+        # Solution
+        c.execute('SELECT id FROM solutions WHERE name = ? AND tenant_id = ?', (application, tenant_id))
+        solution = c.fetchone()
+        solution_id = solution['id'] if solution else c.execute('INSERT INTO solutions (name, tenant_id) VALUES (?, ?)', (application, tenant_id)).lastrowid
+
+        # Product
+        c.execute('SELECT id FROM products WHERE name = ? AND solution_id = ?', (tipo, solution_id))
+        product = c.fetchone()
+        product_id = product['id'] if product else c.execute('INSERT INTO products (name, solution_id) VALUES (?, ?)', (tipo, solution_id)).lastrowid
+
+        # Insert into new features
+        c.execute('''
+            INSERT OR IGNORE INTO features_new (name, repositorio, master, product_id)
+            VALUES (?, ?, ?, ?)
+        ''', (row['name'], row['repositorio'], row['master'], product_id))
+
     conn.commit()
     conn.close()
 

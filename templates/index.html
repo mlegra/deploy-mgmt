@@ -50,65 +50,51 @@
   <div class="bg-gray-900 p-6 rounded-lg shadow-lg mb-10">
   
     <form method="POST" action="/">
-      <div x-data="{
-        cliente: '',
-        solucion: '',
-        producto: '',
-        data: {
-          'Cliente A': {
-            'Solución 1': { 'Producto X': ['Dev', 'Test'], 'Producto Y': ['Prod'] },
-            'Solución 2': { 'Producto Z': ['Test', 'Prod'] }
-          },
-          'Cliente B': {
-            'Solución 3': { 'Producto W': ['Dev', 'Prod'] }
-          }
-        }
-      }"
-      class="bg-gray-900 p-6 rounded-lg shadow-lg mb-10"
-    >
-      <h2 class="text-orange-400 text-xl font-semibold mb-4">🧩 Selección Cliente</h2>
-    
-      <div class="space-y-4">
+      <div x-data="dropdowns()" x-init="loadTenants()" class="space-y-4">
 
-        <!-- 🧩 Cliente + Solución -->
+        <!-- 🧩 Fila 1: Cliente + Solución -->
         <div class="flex flex-col md:flex-row gap-4">
+          <!-- Cliente -->
           <div class="flex-1">
             <label class="font-semibold block mb-1">Cliente</label>
-            <select name="tenancy" x-model="cliente"
+            <select name="tenant_id" x-model="selectedTenant" @change="loadSolutions()"
                     class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
               <option value="">-- Selecciona Cliente --</option>
-              <template x-for="(soluciones, clienteKey) in data" :key="clienteKey">
-                <option :value="clienteKey" x-text="clienteKey"></option>
+              <template x-for="tenant in tenants" :key="tenant.id">
+                <option :value="tenant.id" x-text="tenant.name"></option>
               </template>
             </select>
           </div>
-    
-          <div class="flex-1" x-show="cliente">
+      
+          <!-- Solución -->
+          <div class="flex-1" x-show="selectedTenant">
             <label class="font-semibold block mb-1">Solución</label>
-            <select name="application" x-model="solucion"
+            <select name="solution_id" x-model="selectedSolution" @change="loadProducts()"
                     class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
               <option value="">-- Selecciona Solución --</option>
-              <template x-for="(productos, solucionKey) in data[cliente]" :key="solucionKey">
-                <option :value="solucionKey" x-text="solucionKey"></option>
+              <template x-for="solution in solutions" :key="solution.id">
+                <option :value="solution.id" x-text="solution.name"></option>
               </template>
             </select>
           </div>
         </div>
-    
-        <!-- 🧩 Producto + Ambiente -->
-        <div class="flex flex-col md:flex-row gap-4" x-show="solucion">
+      
+        <!-- 🧩 Fila 2: Producto + Ambiente -->
+        <div class="flex flex-col md:flex-row gap-4" x-show="selectedSolution">
+          <!-- Producto -->
           <div class="flex-1">
             <label class="font-semibold block mb-1">Producto</label>
-            <select name="type" x-model="producto"
+            <select name="product_id" x-model="selectedProduct"
                     class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
               <option value="">-- Selecciona Producto --</option>
-              <template x-for="(ambientes, productoKey) in data[cliente][solucion]" :key="productoKey">
-                <option :value="productoKey" x-text="productoKey"></option>
+              <template x-for="product in products" :key="product.id">
+                <option :value="product.id" x-text="product.name"></option>
               </template>
             </select>
           </div>
-    
-          <div class="flex-1" x-show="producto">
+      
+          <!-- Ambiente -->
+          <div class="flex-1" x-show="selectedProduct">
             <label class="font-semibold block mb-1">Ambiente</label>
             <select name="ambiente"
                     class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
@@ -118,6 +104,9 @@
             </select>
           </div>
         </div>
+      
+      </div>
+    </br>  
     <h2 class="text-orange-400 text-xl font-semibold mb-4">📋 Registrar un nuevo despliegue</h2>
       <div class="space-y-4">
         <div class="flex flex-col md:flex-row gap-4">
@@ -403,5 +392,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+<script>
+  function dropdowns() {
+    return {
+      tenants: [],
+      solutions: [],
+      products: [],
+      selectedTenant: '',
+      selectedSolution: '',
+      selectedProduct: '',
+  
+      loadTenants() {
+        fetch('/api/tenants')
+          .then(res => res.json())
+          .then(data => this.tenants = data);
+      },
+  
+      loadSolutions() {
+        this.selectedSolution = '';
+        this.selectedProduct = '';
+        this.solutions = [];
+        this.products = [];
+        if (!this.selectedTenant) return;
+        fetch(`/api/solutions/${this.selectedTenant}`)
+          .then(res => res.json())
+          .then(data => this.solutions = data);
+      },
+  
+      loadProducts() {
+        this.selectedProduct = '';
+        this.products = [];
+        if (!this.selectedSolution) return;
+        fetch(`/api/products/${this.selectedSolution}`)
+          .then(res => res.json())
+          .then(data => this.products = data);
+      }
+    }
+  }
+  </script>
+  
 </body>
 </html>
