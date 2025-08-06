@@ -100,9 +100,9 @@
     <div class="flex-1" x-show="producto">
       <label class="font-semibold block mb-1">Ambiente</label>
       <select class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-        <template x-for="ambiente in data[cliente][solucion][producto]" :key="ambiente">
-          <option x-text="ambiente"></option>
-        </template>
+        {% for amb in ambiente_options %}
+        <option value="{{ amb }}">{{ amb }}</option>
+        {% endfor %}
       </select>
     </div>
   </div>
