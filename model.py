@@ -67,7 +67,7 @@ def create_db():
     ''')
     conn.commit()
     conn.close()
-    
+
 def migrate_features_to_normalized():
     conn = get_db_connection()
     c = conn.cursor()
@@ -118,9 +118,9 @@ def add_or_get_feature(data):
         feature_id = row["id"]
     else:
         cursor.execute('''
-            INSERT INTO features (name, repositorio, type, application, tenancy, master)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (data["name"], data["repositorio"], data["type"], data["application"], data["tenancy"], data["master"]))
+            INSERT INTO features (name, repositorio, product_id, master)
+            VALUES (?, ?, ?, ?)
+        ''', (data["name"], data["repositorio"], data["product_id"], data["master"]))
         feature_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -139,22 +139,45 @@ def save_deployment(feature_id, deployment_data):
 def get_all_features(filtro=None):
     conn = get_db_connection()
     cursor = conn.cursor()
+    
     query = '''
-        SELECT f.id as feature_id, f.name, f.repositorio, f.type, f.application, f.master,
-               d.ambiente, d.estado, d.fecha, d.release_manager
+        SELECT 
+            f.id AS feature_id,
+            f.name,
+            f.repositorio,
+            f.master,
+            p.name AS type,
+            s.name AS application,
+            t.name AS tenancy,
+            d.ambiente,
+            d.estado,
+            d.fecha,
+            d.release_manager
         FROM features f
+        JOIN products p ON f.product_id = p.id
+        JOIN solutions s ON p.solution_id = s.id
+        JOIN tenants t ON s.tenant_id = t.id
         LEFT JOIN deployments d ON f.id = d.feature_id
     '''
     params = []
     if filtro:
-        query += ' WHERE f.name LIKE ? OR f.repositorio LIKE ? OR d.estado LIKE ?'
+        query += '''
+            WHERE f.name LIKE ? 
+               OR f.repositorio LIKE ? 
+               OR d.estado LIKE ?
+               OR p.name LIKE ? 
+               OR s.name LIKE ?
+               OR t.name LIKE ?
+        '''
         pattern = f"%{filtro}%"
-        params = [pattern, pattern, pattern]
+        params = [pattern] * 6
+
     query += ' ORDER BY f.name, d.ambiente'
     cursor.execute(query, params)
     rows = cursor.fetchall()
     conn.close()
     return rows
+
 
 def update_env_status(feature_id, ambiente, estado):
     conn = get_db_connection()

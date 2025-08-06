@@ -50,9 +50,7 @@ def index():
         feature_data = {
             "name": form["name"],
             "repositorio": form["repositorio"],
-            "type": form["type"],
-            "application": form["application"],
-            "tenancy": form["tenancy"],
+            "product_id": form["product_id"],
             "master": form["master"]
         }
         feature_id = add_or_get_feature(feature_data)
