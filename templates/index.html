@@ -68,49 +68,56 @@
     >
       <h2 class="text-orange-400 text-xl font-semibold mb-4">🧩 Selección Cliente</h2>
     
-      <!-- Fila 1: Cliente + Solución -->
-      <div class="flex flex-col md:flex-row gap-4 mb-4">
-        <div class="flex-1">
-          <label class="font-semibold block mb-1">Cliente</label>
-          <select id="tenancy" name="tenancy" x-model="cliente" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">-- Selecciona Cliente --</option>
-            <template x-for="(soluciones, clienteKey) in data" :key="clienteKey">
-              <option :value="clienteKey" x-text="clienteKey"></option>
-            </template>
-          </select>
-        </div>
-        <div class="flex-1" x-show="cliente">
-          <label class="font-semibold block mb-1">Solución</label>
-          <select id="aplication" name="application" x-model="solucion" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">-- Selecciona Solución --</option>
-            <template x-for="(productos, solucionKey) in data[cliente]" :key="solucionKey">
-              <option :value="solucionKey" x-text="solucionKey"></option>
-            </template>
-          </select>
-        </div>
-      </div>
+      <div class="space-y-4">
+
+        <!-- 🧩 Cliente + Solución -->
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="flex-1">
+            <label class="font-semibold block mb-1">Cliente</label>
+            <select name="tenancy" x-model="cliente"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+              <option value="">-- Selecciona Cliente --</option>
+              <template x-for="(soluciones, clienteKey) in data" :key="clienteKey">
+                <option :value="clienteKey" x-text="clienteKey"></option>
+              </template>
+            </select>
+          </div>
     
-      <!-- Fila 2: Producto + Ambiente -->
-      <div class="flex flex-col md:flex-row gap-4 mb-4" x-show="solucion">
-        <div class="flex-1">
-          <label class="font-semibold block mb-1">Producto</label>
-          <select id="type" name="type" x-model="producto" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            <option value="">-- Selecciona Producto --</option>
-            <template x-for="(ambientes, productoKey) in data[cliente][solucion]" :key="productoKey">
-              <option :value="productoKey" x-text="productoKey"></option>
-            </template>
-          </select>
+          <div class="flex-1" x-show="cliente">
+            <label class="font-semibold block mb-1">Solución</label>
+            <select name="application" x-model="solucion"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+              <option value="">-- Selecciona Solución --</option>
+              <template x-for="(productos, solucionKey) in data[cliente]" :key="solucionKey">
+                <option :value="solucionKey" x-text="solucionKey"></option>
+              </template>
+            </select>
+          </div>
         </div>
-        <div class="flex-1" x-show="producto">
-          <label class="font-semibold block mb-1">Ambiente</label>
-          <select id="ambiente" name="ambiente" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-            {% for amb in ambiente_options %}
-            <option value="{{ amb }}">{{ amb }}</option>
-            {% endfor %}
-          </select>
+    
+        <!-- 🧩 Producto + Ambiente -->
+        <div class="flex flex-col md:flex-row gap-4" x-show="solucion">
+          <div class="flex-1">
+            <label class="font-semibold block mb-1">Producto</label>
+            <select name="type" x-model="producto"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+              <option value="">-- Selecciona Producto --</option>
+              <template x-for="(ambientes, productoKey) in data[cliente][solucion]" :key="productoKey">
+                <option :value="productoKey" x-text="productoKey"></option>
+              </template>
+            </select>
+          </div>
+    
+          <div class="flex-1" x-show="producto">
+            <label class="font-semibold block mb-1">Ambiente</label>
+            <select name="ambiente"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+              {% for amb in ambiente_options %}
+              <option value="{{ amb }}">{{ amb }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-      </div>
-    </div>
     <h2 class="text-orange-400 text-xl font-semibold mb-4">📋 Registrar un nuevo despliegue</h2>
       <div class="space-y-4">
         <div class="flex flex-col md:flex-row gap-4">
