@@ -14,7 +14,7 @@ app = Flask(__name__)
 today = date.today().isoformat()
 create_db()
 
-ambiente_options = ["PreDEV", "DEV", "UAT", "PPD", "PRD"]
+ambiente_options = ["PreDeploy", "DEV", "UAT", "PPD", "PRD"]
 estado_options = ["Valid", "Invalid", "Failed", "Archived", "In-PRD"]
 type_options = ["PersDB", "App", "MDSGen", "MDSHealth"]
 repos_options = ["Repo1", "Repo2"]
