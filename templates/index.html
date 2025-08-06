@@ -125,27 +125,11 @@
               {% endfor %}
             </datalist>
           </div>
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Tipo</label>
-            <select id="type" name="type" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for t in type_options %}
-              <option value="{{ t }}">{{ t }}</option>
-              {% endfor %}
-            </select>
-          </div>
+
         </div>
 
         <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Ambiente</label>
-            <select id="ambiente" name="ambiente" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for a in ambiente_options %}
-              <option value="{{ a }}">{{ a }}</option>
-              {% endfor %}
-            </select>
-          </div>
+
           <div class="flex-1">
             <label class="font-semibold mb-1 block">Fecha</label>
             <input type="date" id="fecha" name="fecha" value="{{ today }}" required
@@ -193,15 +177,7 @@
         </div>
 
         <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Aplicación</label>
-            <select id="application" name="application" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for app in app_options %}
-              <option value="{{ app }}">{{ app }}</option>
-              {% endfor %}
-            </select>
-          </div>
+
           <div class="flex-1">
             <label class="font-semibold mb-1 block">Tenancy</label>
             <select id="tenancy" name="tenancy" required
@@ -213,6 +189,11 @@
           </div>
         </div>
       </div>
+
+      <input type="hidden" id="type" name="type">
+      <input type="hidden" id="application" name="application">
+      <input type="hidden" id="tenancy" name="tenancy">
+      <input type="hidden" id="ambiente" name="ambiente">
 
       <div class="mt-6 text-right">
         <button type="submit"
