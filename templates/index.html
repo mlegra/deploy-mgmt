@@ -63,50 +63,51 @@
   class="bg-gray-900 p-6 rounded-lg shadow-lg mb-10"
 >
   <h2 class="text-orange-400 text-xl font-semibold mb-4">🧩 Selección Jerárquica</h2>
-  
-  <!-- Cliente -->
-  <div class="mb-4">
-    <label class="font-semibold block mb-1">Cliente</label>
-    <select x-model="cliente" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-      <option value="">-- Selecciona Cliente --</option>
-      <template x-for="(soluciones, clienteKey) in data" :key="clienteKey">
-        <option :value="clienteKey" x-text="clienteKey"></option>
-      </template>
-    </select>
+
+  <!-- Fila 1: Cliente + Solución -->
+  <div class="flex flex-col md:flex-row gap-4 mb-4">
+    <div class="flex-1">
+      <label class="font-semibold block mb-1">Cliente</label>
+      <select x-model="cliente" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+        <option value="">-- Selecciona Cliente --</option>
+        <template x-for="(soluciones, clienteKey) in data" :key="clienteKey">
+          <option :value="clienteKey" x-text="clienteKey"></option>
+        </template>
+      </select>
+    </div>
+    <div class="flex-1" x-show="cliente">
+      <label class="font-semibold block mb-1">Solución</label>
+      <select x-model="solucion" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+        <option value="">-- Selecciona Solución --</option>
+        <template x-for="(productos, solucionKey) in data[cliente]" :key="solucionKey">
+          <option :value="solucionKey" x-text="solucionKey"></option>
+        </template>
+      </select>
+    </div>
   </div>
 
-  <!-- Solución -->
-  <div class="mb-4" x-show="cliente">
-    <label class="font-semibold block mb-1">Solución</label>
-    <select x-model="solucion" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-      <option value="">-- Selecciona Solución --</option>
-      <template x-for="(productos, solucionKey) in data[cliente]" :key="solucionKey">
-        <option :value="solucionKey" x-text="solucionKey"></option>
-      </template>
-    </select>
-  </div>
-
-  <!-- Producto -->
-  <div class="mb-4" x-show="solucion">
-    <label class="font-semibold block mb-1">Producto</label>
-    <select x-model="producto" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-      <option value="">-- Selecciona Producto --</option>
-      <template x-for="(ambientes, productoKey) in data[cliente][solucion]" :key="productoKey">
-        <option :value="productoKey" x-text="productoKey"></option>
-      </template>
-    </select>
-  </div>
-
-  <!-- Ambiente -->
-  <div class="mb-4" x-show="producto">
-    <label class="font-semibold block mb-1">Ambiente</label>
-    <select class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-      <template x-for="ambiente in data[cliente][solucion][producto]" :key="ambiente">
-        <option x-text="ambiente"></option>
-      </template>
-    </select>
+  <!-- Fila 2: Producto + Ambiente -->
+  <div class="flex flex-col md:flex-row gap-4 mb-4" x-show="solucion">
+    <div class="flex-1">
+      <label class="font-semibold block mb-1">Producto</label>
+      <select x-model="producto" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+        <option value="">-- Selecciona Producto --</option>
+        <template x-for="(ambientes, productoKey) in data[cliente][solucion]" :key="productoKey">
+          <option :value="productoKey" x-text="productoKey"></option>
+        </template>
+      </select>
+    </div>
+    <div class="flex-1" x-show="producto">
+      <label class="font-semibold block mb-1">Ambiente</label>
+      <select class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
+        <template x-for="ambiente in data[cliente][solucion][producto]" :key="ambiente">
+          <option x-text="ambiente"></option>
+        </template>
+      </select>
+    </div>
   </div>
 </div>
+
 
   <!-- 📋 Nuevo despliegue -->
   <div class="bg-gray-900 p-6 rounded-lg shadow-lg mb-10">
