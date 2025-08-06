@@ -178,22 +178,14 @@
 
         <div class="flex flex-col md:flex-row gap-4">
 
-          <div class="flex-1">
-            <label class="font-semibold mb-1 block">Tenancy</label>
-            <select id="tenancy" name="tenancy" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2">
-              {% for t in tenancy_options %}
-              <option value="{{ t }}">{{ t }}</option>
-              {% endfor %}
-            </select>
-          </div>
+
         </div>
       </div>
 
       <input type="hidden" id="type" name="type">
-      <input type="hidden" id="application" name="application">
-      <input type="hidden" id="tenancy" name="tenancy">
-      <input type="hidden" id="ambiente" name="ambiente">
+<input type="hidden" id="application" name="application">
+<input type="hidden" id="tenancy" name="tenancy">
+<input type="hidden" id="ambiente" name="ambiente">
 
       <div class="mt-6 text-right">
         <button type="submit"
