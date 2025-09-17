@@ -223,5 +223,33 @@ def delete_feature():
     conn.close()
     return jsonify(success=True)
 
+@app.route("/delete_deployments", methods=["POST"])
+def delete_deployments():
+    data = request.get_json()
+    feature_name = data.get("feature")
+    ambientes = data.get("ambientes")  # Debe ser una lista de ambientes, o uno solo
+
+    if not feature_name or not ambientes:
+        return jsonify(success=False, message="Feature name and ambientes required"), 400
+
+    if isinstance(ambientes, str):
+        ambientes = [ambientes]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM features WHERE name = ?", (feature_name,))
+    feature_ids = [row["id"] for row in cursor.fetchall()]
+    if not feature_ids:
+        conn.close()
+        return jsonify(success=False, message="Feature not found"), 404
+
+    # Eliminar los despliegues solo para los ambientes indicados
+    for fid in feature_ids:
+        for amb in ambientes:
+            cursor.execute("DELETE FROM deployments WHERE feature_id = ? AND ambiente = ?", (fid, amb))
+    conn.commit()
+    conn.close()
+    return jsonify(success=True)
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -23,6 +23,18 @@
     .context-menu.show {
       display: block;
     }
+    .delete-env-btn {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 16px;
+      margin-left: 4px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .delete-env-btn:hover {
+      color: #dc2626;
+    }
   </style>
 </head>
 <body class="bg-black text-white px-4 py-6">
@@ -263,6 +275,7 @@
             {% if data.env_status[env] %}
               <span>{{ data.env_status[env] == 'Valid' and '✅' or '❌' }}</span>
               <button class="edit-env-btn" title="Editar">✎</button>
+              <button class="delete-env-btn" title="Eliminar despliegue">🗑️</button>
             {% else %}
               <span class="text-gray-500">-</span>
               <button class="edit-env-btn" title="Agregar">➕</button>
@@ -386,15 +399,25 @@ function deleteFeatureRow(btn) {
   btn.closest('.context-menu').classList.remove('show');
 }
 
-// Eliminar solo los despliegues (deja el feature)
+// Eliminar todos los despliegues (deja el feature)
 function deleteDeploymentsRow(btn) {
   const row = btn.closest('tr');
   const feature = row.dataset.feature;
-  if (confirm(`¿Eliminar todos los despliegues del feature "${feature}"?`)) {
+  const ambientes = Array.from(row.querySelectorAll('.env-cell'))
+    .filter(cell => cell.querySelector('span') && !cell.querySelector('span').classList.contains('text-gray-500'))
+    .map(cell => cell.dataset.env);
+
+  if (ambientes.length === 0) {
+    alert('No hay despliegues para eliminar.');
+    btn.closest('.context-menu').classList.remove('show');
+    return;
+  }
+
+  if (confirm(`¿Eliminar los despliegues del feature "${feature}" en los ambientes: ${ambientes.join(', ')}?`)) {
     fetch('/delete_deployments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ feature })
+      body: JSON.stringify({ feature, ambientes })
     })
     .then(res => res.json())
     .then(data => {
@@ -405,6 +428,7 @@ function deleteDeploymentsRow(btn) {
   btn.closest('.context-menu').classList.remove('show');
 }
 
+// Eliminar despliegue individual por ambiente
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.edit-env-btn').forEach(button => {
     button.addEventListener('click', () => {
@@ -433,6 +457,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById("editModal").classList.remove("hidden");
       });
+    });
+  });
+
+  // Botón eliminar despliegue individual
+  document.querySelectorAll('.delete-env-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const cell = button.closest('.env-cell');
+      const row = cell.closest('tr');
+      const feature = row.dataset.feature;
+      const ambiente = cell.dataset.env;
+      if (confirm(`¿Eliminar el despliegue de "${feature}" en ambiente "${ambiente}"?`)) {
+        fetch('/delete_deployments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature, ambientes: [ambiente] })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) location.reload();
+          else alert('No se pudo eliminar el despliegue.');
+        });
+      }
     });
   });
 
