@@ -6,6 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    .menu-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .context-menu {
+      min-width: 160px;
+      display: none;
+    }
+    .context-menu.show {
+      display: block;
+    }
+  </style>
 </head>
 <body class="bg-black text-white px-4 py-6">
   <header x-data="{ open: false }" class="sticky top-0 z-50 bg-black mb-6">
@@ -165,17 +183,12 @@
                       placeholder="deploy.sql"></textarea>
           </div>
         </div>
-
-        <div class="flex flex-col md:flex-row gap-4">
-
-
-        </div>
       </div>
 
       <input type="hidden" id="type" name="type">
-<input type="hidden" id="application" name="application">
-<input type="hidden" id="tenancy" name="tenancy">
-<input type="hidden" id="ambiente" name="ambiente">
+      <input type="hidden" id="application" name="application">
+      <input type="hidden" id="tenancy" name="tenancy">
+      <input type="hidden" id="ambiente" name="ambiente">
 
       <div class="mt-6 text-right">
         <button type="submit"
@@ -234,6 +247,7 @@
           {% for env in ambiente_options %}
           <th class="bg-gray-800 px-4 py-2 border border-gray-700">{{ env }}</th>
           {% endfor %}
+          <th class="bg-gray-800 px-4 py-2 border border-gray-700"></th>
         </tr>
       </thead>
       <tbody>
@@ -255,6 +269,14 @@
             {% endif %}
           </td>
           {% endfor %}
+          <td class="border border-gray-700 px-2 py-1 text-center relative">
+            <button class="menu-btn" onclick="showRowMenu(event, this)">&#x22EE;</button>
+            <div class="context-menu absolute right-0 mt-1 bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
+              <button class="block w-full text-left px-4 py-2 hover:bg-gray-700" onclick="editFeatureRow(this)">Editar</button>
+              <button class="block w-full text-left px-4 py-2 hover:bg-red-700 text-red-400" onclick="deleteFeatureRow(this)">Eliminar feature</button>
+              <button class="block w-full text-left px-4 py-2 hover:bg-yellow-700 text-yellow-300" onclick="deleteDeploymentsRow(this)">Eliminar despliegues</button>
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -316,24 +338,71 @@ function closeModal() {
   document.getElementById("editModal").classList.add("hidden");
 }
 
-function exportFilteredCSV() {
-  const table = document.getElementById("filteredTable");
-  if (!table) return;
+function showRowMenu(event, btn) {
+  event.stopPropagation();
+  document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('show'));
+  const menu = btn.nextElementSibling;
+  menu.classList.add('show');
+  document.addEventListener('click', function handler(e) {
+    if (!menu.contains(e.target)) {
+      menu.classList.remove('show');
+      document.removeEventListener('click', handler);
+    }
+  });
+}
 
-  const rows = Array.from(table.querySelectorAll("tr"));
-  const csv = rows.map(row => {
-    const cells = Array.from(row.querySelectorAll("th,td"));
-    return cells.map(cell => '"' + cell.innerText.trim() + '"').join(",");
-  }).join("\\n");
+// Editar: abre el modal para el primer ambiente con despliegue (puedes personalizar)
+function editFeatureRow(btn) {
+  const row = btn.closest('tr');
+  const feature = row.dataset.feature;
+  // Busca el primer ambiente con despliegue para editar
+  const cell = row.querySelector('.env-cell span:not(.text-gray-500)');
+  if (cell) {
+    cell.parentElement.querySelector('.edit-env-btn').click();
+  } else {
+    // Si no hay despliegues, abre el primero para agregar
+    const addBtn = row.querySelector('.env-cell .edit-env-btn');
+    if (addBtn) addBtn.click();
+  }
+  btn.closest('.context-menu').classList.remove('show');
+}
 
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "filtered_deployments.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+// Eliminar feature (feature + despliegues)
+function deleteFeatureRow(btn) {
+  const row = btn.closest('tr');
+  const feature = row.dataset.feature;
+  if (confirm(`¿Eliminar el feature "${feature}" y todos sus despliegues?`)) {
+    fetch('/delete_feature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feature })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) location.reload();
+      else alert('No se pudo eliminar el feature.');
+    });
+  }
+  btn.closest('.context-menu').classList.remove('show');
+}
+
+// Eliminar solo los despliegues (deja el feature)
+function deleteDeploymentsRow(btn) {
+  const row = btn.closest('tr');
+  const feature = row.dataset.feature;
+  if (confirm(`¿Eliminar todos los despliegues del feature "${feature}"?`)) {
+    fetch('/delete_deployments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feature })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) location.reload();
+      else alert('No se pudieron eliminar los despliegues.');
+    });
+  }
+  btn.closest('.context-menu').classList.remove('show');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

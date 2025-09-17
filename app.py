@@ -199,7 +199,29 @@ def reports():
                            start_date=start_date,
                            end_date=end_date)
 
+@app.route("/delete_feature", methods=["POST"])
+def delete_feature():
+    data = request.get_json()
+    feature_name = data.get("feature")
+    if not feature_name:
+        return jsonify(success=False, message="No feature name provided"), 400
 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Buscar todos los feature_id con ese nombre
+    cursor.execute("SELECT id FROM features WHERE name = ?", (feature_name,))
+    feature_ids = [row["id"] for row in cursor.fetchall()]
+    if not feature_ids:
+        conn.close()
+        return jsonify(success=False, message="Feature not found"), 404
+
+    # Eliminar despliegues asociados
+    cursor.executemany("DELETE FROM deployments WHERE feature_id = ?", [(fid,) for fid in feature_ids])
+    # Eliminar el feature
+    cursor.executemany("DELETE FROM features WHERE id = ?", [(fid,) for fid in feature_ids])
+    conn.commit()
+    conn.close()
+    return jsonify(success=True)
 
 if __name__ == "__main__":
     app.run(debug=True)
