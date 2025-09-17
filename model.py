@@ -1,4 +1,5 @@
 import sqlite3
+import hashlib
 
 DB_NAME = "deployments.db"
 
@@ -50,7 +51,9 @@ def create_db():
             application TEXT,
             tenancy TEXT,
             master TEXT,
-            UNIQUE(name, repositorio)
+            product_id INTEGER,
+            UNIQUE(name, repositorio),
+            FOREIGN KEY (product_id) REFERENCES products(id)
         )
     ''')
     c.execute('''
@@ -63,6 +66,15 @@ def create_db():
             release_manager TEXT,
             UNIQUE(feature_id, ambiente),
             FOREIGN KEY(feature_id) REFERENCES features(id)
+        )
+    ''')
+    # Tabla de usuarios
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL -- 'admin', 'release_manager', 'viewer'
         )
     ''')
     conn.commit()
@@ -178,7 +190,6 @@ def get_all_features(filtro=None):
     conn.close()
     return rows
 
-
 def update_env_status(feature_id, ambiente, estado):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -230,3 +241,46 @@ def get_all_deployment_details():
                 "release_manager": row["release_manager"]
             }
     return deployments
+
+# --- USUARIOS Y AUTENTICACIÓN ---
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def create_user(username, password, role):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+              (username, hash_password(password), role))
+    conn.commit()
+    conn.close()
+
+def get_user_by_username(username):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT * FROM users WHERE username = ?', (username,))
+    user = c.fetchone()
+    conn.close()
+    return user
+
+def get_all_users():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT id, username, role FROM users ORDER BY username')
+    users = c.fetchall()
+    conn.close()
+    return users
+
+def update_user_role(user_id, new_role):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
+    conn.commit()
+    conn.close()
+
+def delete_user(user_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('DELETE FROM users WHERE id = ?', (user_id,))
+    conn.commit()
+    conn.close()

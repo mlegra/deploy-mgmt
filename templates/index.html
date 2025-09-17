@@ -38,37 +38,70 @@
   </style>
 </head>
 <body class="bg-black text-white px-4 py-6">
-  <header x-data="{ open: false }" class="sticky top-0 z-50 bg-black mb-6">
-    <div class="flex justify-between items-center py-4 px-4 md:px-6 bg-gray-900 rounded-md">
-      <div class="text-lg font-bold text-orange-400 flex items-center gap-2">
-        <span>🛠</span> <span>DevOps Dashboard</span>
-      </div>
-      <div class="md:hidden">
-        <button @click="open = !open" class="text-white focus:outline-none">
-          <template x-if="!open">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </template>
-          <template x-if="open">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </template>
-        </button>
-      </div>
-      <nav class="hidden md:flex space-x-6 text-sm items-center">
+<header x-data="{ open: false }" class="sticky top-0 z-50 bg-black mb-6">
+  <div class="flex justify-between items-center py-4 px-4 md:px-6 bg-gray-900 rounded-md">
+    <div class="text-lg font-bold text-orange-400 flex items-center gap-2">
+      <span>🛠</span> <span>DevOps Dashboard</span>
+    </div>
+    <div class="hidden md:flex items-center space-x-4">
+      <nav class="flex space-x-6 text-sm items-center">
         <a href="/" class="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">🏠 <span>Dashboard</span></a>
         <a href="/reports" class="text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1">📊 <span>Reportes</span></a>
+        {% if session['role'] == 'admin' %}
+        <div class="relative group">
+          <button class="text-green-400 hover:text-green-300 font-semibold flex items-center gap-1 focus:outline-none">
+            <span>⚙️ Administración</span>
+            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div class="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded shadow-lg hidden group-hover:block z-50">
+            <a href="/admin/users" class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700">👤 Gestión de usuarios</a>
+            <!-- Puedes agregar más opciones aquí -->
+          </div>
+        </div>
+        {% endif %}
       </nav>
+      <span class="text-gray-300 font-semibold">{{ session['username'] }}</span>
+      <a href="{{ url_for('logout') }}"
+         class="ml-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded transition">
+        Cerrar sesión
+      </a>
     </div>
-    <div x-show="open" x-transition class="md:hidden bg-gray-800 mt-2 p-4 rounded-md space-y-2">
-      <a href="/" class="block text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-2">🏠 Dashboard</a>
-      <a href="/reports" class="block text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-2">📊 Reportes</a>
+    <div class="md:hidden">
+      <button @click="open = !open" class="text-white focus:outline-none">
+        <template x-if="!open">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </template>
+        <template x-if="open">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </template>
+      </button>
     </div>
-  </header>
+  </div>
+  <div x-show="open" x-transition class="md:hidden bg-gray-800 mt-2 p-4 rounded-md space-y-2">
+    <a href="/" class="block text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-2">🏠 Dashboard</a>
+    <a href="/reports" class="block text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-2">📊 Reportes</a>
+    {% if session['role'] == 'admin' %}
+    <div class="mt-2">
+      <a href="/admin/users" class="block px-4 py-2 text-green-400 hover:bg-gray-700 rounded">⚙️ Gestión de usuarios</a>
+    </div>
+    {% endif %}
+    <div class="flex items-center justify-between mt-4">
+      <span class="text-gray-300 font-semibold">{{ session['username'] }}</span>
+      <a href="{{ url_for('logout') }}"
+         class="ml-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded transition">
+        Cerrar sesión
+      </a>
+    </div>
+  </div>
+</header>
   
 
 <div class="max-w-5xl mx-auto">

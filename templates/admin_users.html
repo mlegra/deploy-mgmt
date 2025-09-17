@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Usuarios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white px-4 py-6">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-6">👤 Gestión de Usuarios</h1>
+    {% if error %}
+      <div class="mb-4 text-red-400">{{ error }}</div>
+    {% endif %}
+    <form method="POST" class="bg-gray-900 p-4 rounded mb-6 flex flex-col md:flex-row gap-4 items-end">
+      <input type="hidden" name="action" value="create">
+      <div class="flex-1">
+        <label class="block font-semibold mb-1">Usuario</label>
+        <input name="username" type="text" required class="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white">
+      </div>
+      <div class="flex-1">
+        <label class="block font-semibold mb-1">Contraseña</label>
+        <input name="password" type="password" required class="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white">
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">Rol</label>
+        <select name="role" required class="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white">
+          <option value="admin">Admin</option>
+          <option value="release_manager">Release Manager</option>
+          <option value="viewer">Solo Lectura</option>
+        </select>
+      </div>
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">Crear</button>
+    </form>
+    <table class="w-full table-auto border-collapse text-sm bg-gray-900 rounded">
+      <thead>
+        <tr>
+          <th class="px-4 py-2 border-b border-gray-700 text-left">Usuario</th>
+          <th class="px-4 py-2 border-b border-gray-700 text-left">Rol</th>
+          <th class="px-4 py-2 border-b border-gray-700"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td class="px-4 py-2 border-b border-gray-800">{{ user['username'] }}</td>
+          <td class="px-4 py-2 border-b border-gray-800">
+            <form method="POST" class="inline">
+              <input type="hidden" name="action" value="update_role">
+              <input type="hidden" name="user_id" value="{{ user['id'] }}">
+              <select name="new_role" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white">
+                <option value="admin" {% if user['role']=='admin' %}selected{% endif %}>Admin</option>
+                <option value="release_manager" {% if user['role']=='release_manager' %}selected{% endif %}>Release Manager</option>
+                <option value="viewer" {% if user['role']=='viewer' %}selected{% endif %}>Solo Lectura</option>
+              </select>
+              <button type="submit" class="ml-2 bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded">Actualizar</button>
+            </form>
+          </td>
+          <td class="px-4 py-2 border-b border-gray-800">
+            {% if user['username'] != session['username'] %}
+            <form method="POST" class="inline" onsubmit="return confirm('¿Eliminar usuario {{ user[ 'username'] }}?');">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="user_id" value="{{ user['id'] }}">
+              <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">Eliminar</button>
+            </form>
+            {% else %}
+            <span class="text-gray-500">Actual</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="mt-6">
+      <a href="{{ url_for('index') }}" class="text-cyan-400 hover:underline">← Volver al Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

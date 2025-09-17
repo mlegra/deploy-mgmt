@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from datetime import date
 from datetime import datetime
 from collections import defaultdict
@@ -7,10 +7,14 @@ from utils import calculate_kpis
 from model import (
     create_db, add_or_get_feature, save_deployment,
     get_all_features, get_all_feature_names, update_env_status,
-    update_full_deployment, get_all_deployment_details, get_db_connection
+    update_full_deployment, get_all_deployment_details, get_db_connection,
+    get_user_by_username, hash_password, get_all_users, create_user, update_user_role, delete_user
 )
 
+from functools import wraps
+
 app = Flask(__name__)
+app.secret_key = "uN4C4d3n4L4rG4yC0mPl3j4!2025$@#"  # Cambia esto por algo seguro
 today = date.today().isoformat()
 create_db()
 
@@ -22,7 +26,38 @@ rm_options = ["Michel LF", "Elizabet RC", "Yasser F"]
 app_options = ["INSIS", "Premium"]
 tenancy_options = ["Uruguay", "Panama"]
 
+# --- Autenticación y sesión ---
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user = get_user_by_username(request.form['username'])
+        if user and user['password'] == hash_password(request.form['password']):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['role'] = user['role']
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error="Usuario o contraseña incorrectos")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# --- API y vistas protegidas ---
+
 @app.route('/api/tenants')
+@login_required
 def api_tenants():
     conn = get_db_connection()
     rows = conn.execute('SELECT id, name FROM tenants ORDER BY name').fetchall()
@@ -30,6 +65,7 @@ def api_tenants():
     return jsonify([dict(row) for row in rows])
 
 @app.route('/api/solutions/<int:tenant_id>')
+@login_required
 def api_solutions(tenant_id):
     conn = get_db_connection()
     rows = conn.execute('SELECT id, name FROM solutions WHERE tenant_id = ? ORDER BY name', (tenant_id,)).fetchall()
@@ -37,6 +73,7 @@ def api_solutions(tenant_id):
     return jsonify([dict(row) for row in rows])
 
 @app.route('/api/products/<int:solution_id>')
+@login_required
 def api_products(solution_id):
     conn = get_db_connection()
     rows = conn.execute('SELECT id, name FROM products WHERE solution_id = ? ORDER BY name', (solution_id,)).fetchall()
@@ -44,6 +81,7 @@ def api_products(solution_id):
     return jsonify([dict(row) for row in rows])
 
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     if request.method == "POST":
         form = request.form
@@ -102,7 +140,6 @@ def index():
     deployment_details = get_all_deployment_details()
     kpis = calculate_kpis(filtered_deployments, ambiente_options)
 
-
     return render_template("index.html",
                            grouped_deployments=grouped,
                            deployment_details=deployment_details,
@@ -121,8 +158,8 @@ def index():
                            filtered_deployments=filtered_deployments,
                            kpis=kpis)
 
-
 @app.route("/update_full_deployment", methods=["POST"])
+@login_required
 def update_full_deployment_route():
     data = request.get_json()
     feature_name = data.get("feature")
@@ -141,6 +178,7 @@ def update_full_deployment_route():
     return jsonify(success=False, message="Feature not found"), 400
 
 @app.route("/get_deployment_details", methods=["POST"])
+@login_required
 def get_deployment_details():
     data = request.get_json()
     feature_name = data.get("feature")
@@ -156,6 +194,7 @@ def get_deployment_details():
     return jsonify(success=False)
 
 @app.route("/reports", methods=["GET"])
+@login_required
 def reports():
     filtro = request.args.get("filtro", "").strip()
     filter_estado = request.args.get("filter_estado", "")
@@ -187,7 +226,6 @@ def reports():
         and (not filter_ambiente or r["ambiente"] == filter_ambiente)
         and within_date_range(r)
     ]
-    
 
     return render_template("reports.html",
                            filtered_deployments=filtered_deployments,
@@ -200,6 +238,7 @@ def reports():
                            end_date=end_date)
 
 @app.route("/delete_feature", methods=["POST"])
+@login_required
 def delete_feature():
     data = request.get_json()
     feature_name = data.get("feature")
@@ -224,6 +263,7 @@ def delete_feature():
     return jsonify(success=True)
 
 @app.route("/delete_deployments", methods=["POST"])
+@login_required
 def delete_deployments():
     data = request.get_json()
     feature_name = data.get("feature")
@@ -250,6 +290,44 @@ def delete_deployments():
     conn.commit()
     conn.close()
     return jsonify(success=True)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'role' not in session or session['role'] != 'admin':
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/admin/users', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def manage_users():
+    error = None
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'create':
+            username = request.form.get('username', '').strip()
+            password = request.form.get('password', '').strip()
+            role = request.form.get('role', '').strip()
+            if not username or not password or not role:
+                error = "Todos los campos son obligatorios."
+            else:
+                try:
+                    create_user(username, password, role)
+                except Exception as e:
+                    error = "No se pudo crear el usuario (¿ya existe?)."
+        elif action == 'delete':
+            user_id = request.form.get('user_id')
+            if user_id:
+                delete_user(user_id)
+        elif action == 'update_role':
+            user_id = request.form.get('user_id')
+            new_role = request.form.get('new_role')
+            if user_id and new_role:
+                update_user_role(user_id, new_role)
+    users = get_all_users()
+    return render_template('admin_users.html', users=users, error=error)
 
 if __name__ == "__main__":
     app.run(debug=True)
