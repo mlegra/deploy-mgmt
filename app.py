@@ -110,6 +110,8 @@ def api_products(solution_id):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
+    if 'role' in session and session['role'] == 'viewer':
+        return redirect(url_for('reports'))
     if request.method == "POST":
         form = request.form
         feature_data = {
