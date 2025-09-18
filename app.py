@@ -63,24 +63,17 @@ def admin_required(f):
     return decorated_function
 
 def roles_required(allowed_roles):
-    """
-    Decorador que permite acceso si el usuario tiene al menos
-    uno de los roles en `allowed_roles`.
-    """
     def wrapper(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Verificar si existe la clave 'role' en la sesión
             if 'role' not in session:
                 return redirect(url_for('index'))
-
-            # Verificar si el rol está en los permitidos
             if session['role'] not in allowed_roles:
                 return redirect(url_for('index'))
-
             return f(*args, **kwargs)
         return decorated_function
     return wrapper
+
 # --- API y vistas protegidas ---
 
 @app.route('/api/tenants')
@@ -122,8 +115,10 @@ def index():
         }
         feature_id = add_or_get_feature(feature_data)
 
+        # Normaliza ambiente al guardar
+        ambiente = form["ambiente"].strip()
         deployment_data = {
-            "ambiente": form["ambiente"],
+            "ambiente": ambiente,
             "estado": form["estado"],
             "fecha": form["fecha"],
             "release_manager": form["release_manager"]
@@ -148,7 +143,7 @@ def index():
             filtro.lower() in r["repositorio"].lower() or
             filtro.lower() in (r["estado"] or "").lower())
         and (not filter_estado or r["estado"] == filter_estado)
-        and (not filter_ambiente or r["ambiente"] == filter_ambiente)
+        and (not filter_ambiente or (r["ambiente"] or "").strip() == filter_ambiente.strip())
     ]
 
     # ✅ Build matrix view using full data
@@ -197,6 +192,10 @@ def update_full_deployment_route():
     fecha = data.get("fecha")
     release_manager = data.get("release_manager")
 
+    # Normaliza ambiente antes de guardar
+    if ambiente:
+        ambiente = ambiente.strip()
+
     rows = get_all_features()
     for row in rows:
         if row["name"] == feature_name:
@@ -215,7 +214,7 @@ def get_deployment_details():
 
     rows = get_all_features()
     for row in rows:
-        if row["name"] == feature_name and row["ambiente"] == ambiente:
+        if row["name"] == feature_name and (row["ambiente"] or "").strip() == ambiente.strip():
             return jsonify(success=True,
                            estado=row["estado"],
                            fecha=row["fecha"],
@@ -252,7 +251,7 @@ def reports():
             filtro.lower() in r["repositorio"].lower() or
             filtro.lower() in (r["estado"] or "").lower())
         and (not filter_estado or r["estado"] == filter_estado)
-        and (not filter_ambiente or r["ambiente"] == filter_ambiente)
+        and (not filter_ambiente or (r["ambiente"] or "").strip() == filter_ambiente.strip())
         and within_date_range(r)
     ]
 
@@ -276,16 +275,13 @@ def delete_feature():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Buscar todos los feature_id con ese nombre
     cursor.execute("SELECT id FROM features WHERE name = ?", (feature_name,))
     feature_ids = [row["id"] for row in cursor.fetchall()]
     if not feature_ids:
         conn.close()
         return jsonify(success=False, message="Feature not found"), 404
 
-    # Eliminar despliegues asociados
     cursor.executemany("DELETE FROM deployments WHERE feature_id = ?", [(fid,) for fid in feature_ids])
-    # Eliminar el feature
     cursor.executemany("DELETE FROM features WHERE id = ?", [(fid,) for fid in feature_ids])
     conn.commit()
     conn.close()
@@ -312,21 +308,16 @@ def delete_deployments():
         conn.close()
         return jsonify(success=False, message="Feature not found"), 404
 
-    # Eliminar los despliegues solo para los ambientes indicados
+    # Eliminar los despliegues solo para los ambientes indicados (normaliza)
     for fid in feature_ids:
         for amb in ambientes:
-            cursor.execute("DELETE FROM deployments WHERE feature_id = ? AND ambiente = ?", (fid, amb))
+            cursor.execute(
+                "DELETE FROM deployments WHERE feature_id = ? AND TRIM(ambiente) = ?",
+                (fid, amb.strip())
+            )
     conn.commit()
     conn.close()
     return jsonify(success=True)
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'role' not in session or session['role'] != 'admin':
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @app.route('/admin/users', methods=['GET', 'POST'])
 @login_required
