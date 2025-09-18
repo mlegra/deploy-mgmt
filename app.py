@@ -54,33 +54,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'role' not in session or session['role'] != 'admin':
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def roles_required(allowed_roles):
-    """
-    Decorador que permite acceso si el usuario tiene al menos
-    uno de los roles en `allowed_roles`.
-    """
-    def wrapper(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            # Verificar si existe la clave 'role' en la sesión
-            if 'role' not in session:
-                return redirect(url_for('index'))
-
-            # Verificar si el rol está en los permitidos
-            if session['role'] not in allowed_roles:
-                return redirect(url_for('index'))
-
-            return f(*args, **kwargs)
-        return decorated_function
-    return wrapper
 # --- API y vistas protegidas ---
 
 @app.route('/api/tenants')
@@ -110,8 +83,6 @@ def api_products(solution_id):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    if 'role' in session and session['role'] == 'viewer':
-        return redirect(url_for('reports'))
     if request.method == "POST":
         form = request.form
         feature_data = {
@@ -293,7 +264,6 @@ def delete_feature():
 
 @app.route("/delete_deployments", methods=["POST"])
 @login_required
-@roles_required(["admin", "release_manager"])
 def delete_deployments():
     data = request.get_json()
     feature_name = data.get("feature")
@@ -321,6 +291,13 @@ def delete_deployments():
     conn.close()
     return jsonify(success=True)
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'role' not in session or session['role'] != 'admin':
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/admin/users', methods=['GET', 'POST'])
 @login_required
