@@ -9,7 +9,7 @@ def calculate_kpis(filtered_deployments, ambiente_options):
         if d_norm.get("ambiente"):
             d_norm["ambiente"] = d_norm["ambiente"].strip().upper()
         norm_deployments.append(d_norm)
-    print("Ambientes en norm_deployments:", [d["ambiente"] for d in norm_deployments])
+    #print("Ambientes en norm_deployments:", [d["ambiente"] for d in norm_deployments])
     ambiente_options_norm = [a.strip().upper() for a in ambiente_options]
 
     # SOLO CUENTA LOS QUE TIENEN AMBIENTE
